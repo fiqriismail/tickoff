@@ -1,7 +1,10 @@
 //! The application shell: owns the connection and the loaded tasks, lays out
 //! the screen, and routes what each feature reports back. No feature logic lives here.
 
-use eframe::egui::{self, Align, CentralPanel, Frame, Layout, Margin, Panel};
+use eframe::egui::{
+    self, Align, CentralPanel, Frame, Id, Layout, Margin, Panel, PointerButton, Rect, Sense,
+    ViewportCommand, vec2,
+};
 use rusqlite::Connection;
 
 use crate::features::add_task::AddTask;
@@ -12,6 +15,11 @@ use crate::features::task_list::{self, TaskList};
 use crate::shared::outcome::Outcome;
 use crate::shared::task::Task;
 use crate::shared::{db, theme};
+
+/// Height of the invisible strip along the top edge that drags the window.
+const TITLE_BAR_HEIGHT: f32 = 18.0;
+/// Room above the sidebar content for the macOS close/minimise/zoom buttons.
+const TRAFFIC_LIGHT_INSET: f32 = 22.0;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum View {
@@ -74,6 +82,7 @@ impl App {
             }
 
             ui.with_layout(Layout::top_down(Align::Min), |ui| {
+                ui.add_space(TRAFFIC_LIGHT_INSET);
                 let output =
                     self.filters
                         .show(ui, &self.conn, &self.tasks, self.view == View::Tasks);
@@ -148,5 +157,23 @@ impl eframe::App for App {
         if let Some(outcome) = self.edit_task.show(&ui.ctx().clone(), &self.conn) {
             self.handle(outcome);
         }
+
+        title_bar_drag_area(ui);
+    }
+}
+
+/// With a transparent title bar nothing drags the window any more, so an
+/// invisible strip along the top does it, and double-click zooms like macOS.
+fn title_bar_drag_area(ui: &mut egui::Ui) {
+    let full = ui.max_rect();
+    let strip = Rect::from_min_size(full.min, vec2(full.width(), TITLE_BAR_HEIGHT));
+    let response = ui.interact(strip, Id::unique("hello_gui::title_bar"), Sense::click_and_drag());
+
+    let ctx = ui.ctx();
+    if response.double_clicked() {
+        let maximized = ctx.input(|i| i.viewport().maximized.unwrap_or(false));
+        ctx.send_viewport_cmd(ViewportCommand::Maximized(!maximized));
+    } else if response.drag_started_by(PointerButton::Primary) {
+        ctx.send_viewport_cmd(ViewportCommand::StartDrag);
     }
 }

@@ -158,7 +158,7 @@ pub struct Appearance {
 impl Default for Appearance {
     fn default() -> Self {
         Self {
-            mode: ThemeMode::Dark,
+            mode: ThemeMode::System,
             accent: Accent::Indigo,
             scale: UiScale::Default,
             compact_cards: false,
