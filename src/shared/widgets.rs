@@ -2,10 +2,12 @@ use eframe::egui::{
     Align2, Button, Color32, CornerRadius, CursorIcon, FontId, Response, RichText, Sense, Ui, vec2,
 };
 
+use super::icons::{self, Icon};
 use super::theme;
 
-/// A full-width sidebar entry with a right-aligned `detail` (e.g. a count).
-pub fn nav_row(ui: &mut Ui, label: &str, detail: &str, selected: bool) -> Response {
+/// A full-width sidebar entry with an accent-coloured icon and a right-aligned
+/// `detail` (e.g. a count).
+pub fn nav_row(ui: &mut Ui, icon: Icon, label: &str, detail: &str, selected: bool) -> Response {
     let p = theme::palette(ui.ctx());
     let (rect, response) = ui.allocate_exact_size(vec2(ui.available_width(), 36.0), Sense::click());
     let background = if selected {
@@ -19,8 +21,9 @@ pub fn nav_row(ui: &mut Ui, label: &str, detail: &str, selected: bool) -> Respon
 
     let painter = ui.painter();
     painter.rect_filled(rect, CornerRadius::same(8), background);
+    icons::paint(painter, rect.left_center() + vec2(12.0 + icons::SIZE / 2.0, 0.0), icon, p.accent);
     painter.text(
-        rect.left_center() + vec2(12.0, 0.0),
+        rect.left_center() + vec2(12.0 + icons::SIZE + 10.0, 0.0),
         Align2::LEFT_CENTER,
         label,
         FontId::proportional(15.0),

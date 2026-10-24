@@ -5,9 +5,13 @@ mod card;
 mod store;
 
 use chrono::Local;
-use eframe::egui::{self, Align, Layout, Margin, RichText, TextEdit};
+use eframe::egui::{
+    self, Align, CornerRadius, CursorIcon, Frame, Id, Key, Layout, Margin, RichText, Sense, Stroke,
+    TextEdit, vec2,
+};
 use rusqlite::Connection;
 
+use crate::shared::icons::{self, Icon};
 use crate::shared::outcome::Outcome;
 use crate::shared::task::Task;
 use crate::shared::theme;
@@ -43,25 +47,66 @@ impl TaskList {
 
     pub fn header(&mut self, ui: &mut egui::Ui, title: &str) {
         let p = theme::palette(ui.ctx());
-        ui.horizontal(|ui| {
-            ui.vertical(|ui| {
+        ui.vertical(|ui| {
+            ui.spacing_mut().item_spacing.y = 4.0;
+            ui.horizontal(|ui| {
                 ui.heading(title);
-                ui.label(
-                    RichText::new(Local::now().format("%A, %-d %B").to_string()).color(p.muted),
-                );
+                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                    self.search_field(ui);
+                });
             });
-            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                let search = ui.add(
-                    TextEdit::singleline(&mut self.search)
-                        .hint_text("Search tasks…")
-                        .desired_width(220.0)
-                        .margin(Margin::symmetric(10, 8)),
-                );
-                if std::mem::take(&mut self.focus_search) {
-                    search.request_focus();
-                }
-            });
+            ui.label(RichText::new(Local::now().format("%A, %-d %B").to_string()).color(p.muted));
         });
+    }
+
+    fn search_field(&mut self, ui: &mut egui::Ui) {
+        let p = theme::palette(ui.ctx());
+        let id = Id::unique("hello_gui::search");
+        let focused = ui.memory(|m| m.has_focus(id));
+        let stroke = if focused { p.accent } else { p.border };
+
+        Frame::new()
+            .fill(p.input)
+            .stroke(Stroke::new(1.0, stroke))
+            .corner_radius(CornerRadius::same(9))
+            .inner_margin(Margin::symmetric(10, 4))
+            .show(ui, |ui| {
+                ui.spacing_mut().item_spacing.x = 6.0;
+                ui.horizontal(|ui| {
+                    // The header row lays out right-to-left, so children are added in reverse.
+                    let (rect, clear) = ui.allocate_exact_size(vec2(icons::SIZE, icons::SIZE), Sense::click());
+                    if !self.search.is_empty() {
+                        let tint = if clear.hovered() { p.text } else { p.muted };
+                        icons::paint(ui.painter(), rect.center(), Icon::Clear, tint);
+                        if clear.on_hover_cursor(CursorIcon::PointingHand).clicked() {
+                            self.search.clear();
+                            ui.memory_mut(|m| m.request_focus(id));
+                        }
+                    }
+
+                    let edit = ui.add(
+                        TextEdit::singleline(&mut self.search)
+                            .id(id)
+                            .hint_text("Search")
+                            .desired_width(170.0)
+                            .frame(Frame::new()),
+                    );
+                    if std::mem::take(&mut self.focus_search) {
+                        edit.request_focus();
+                    }
+
+                    let (rect, _) = ui.allocate_exact_size(vec2(icons::SIZE, icons::SIZE), Sense::hover());
+                    icons::paint(ui.painter(), rect.center(), Icon::Search, p.muted);
+
+                    if (edit.has_focus() || edit.lost_focus()) && ui.input(|i| i.key_pressed(Key::Escape)) {
+                        if self.search.is_empty() {
+                            edit.surrender_focus();
+                        } else {
+                            self.search.clear();
+                        }
+                    }
+                });
+            });
     }
 
     /// Shows the cards for every task in `tasks` that passes `visible` and the search box.
@@ -80,6 +125,8 @@ impl TaskList {
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
             .show(ui, |ui| {
+                let compact = theme::appearance(ui.ctx()).compact_cards;
+                ui.spacing_mut().item_spacing.y = if compact { 8.0 } else { 14.0 };
                 for task in tasks
                     .iter()
                     .filter(|t| visible(t) && matches_query(t, &query))
@@ -93,13 +140,19 @@ impl TaskList {
                 if shown == 0 {
                     ui.add_space(60.0);
                     ui.vertical_centered(|ui| {
-                        ui.label(RichText::new("🎉").size(40.0));
-                        let message = if tasks.is_empty() {
-                            "No tasks yet — add your first one above."
+                        let muted = theme::palette(ui.ctx()).muted;
+                        if !query.is_empty() {
+                            ui.label(RichText::new(format!("No results for “{}”", self.search.trim())).size(16.0).strong());
+                            ui.label(RichText::new("Check the spelling or try a different search.").color(muted));
                         } else {
-                            "Nothing matches here."
-                        };
-                        ui.label(RichText::new(message).color(theme::palette(ui.ctx()).muted));
+                            ui.label(RichText::new("🎉").size(40.0));
+                            let message = if tasks.is_empty() {
+                                "No tasks yet — add your first one above."
+                            } else {
+                                "Nothing here yet."
+                            };
+                            ui.label(RichText::new(message).color(muted));
+                        }
                     });
                 }
             });

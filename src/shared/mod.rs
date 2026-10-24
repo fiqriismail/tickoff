@@ -4,6 +4,7 @@
 //! genuinely need it. Everything else lives inside the feature that uses it.
 
 pub mod db;
+pub mod icons;
 pub mod outcome;
 pub mod task;
 pub mod theme;

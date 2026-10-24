@@ -8,6 +8,7 @@ pub enum Command {
     NewTask,
     Find,
     Settings,
+    ToggleSidebar,
 }
 
 #[cfg(target_os = "macos")]
@@ -22,6 +23,7 @@ mod imp {
 
     pub struct Menu {
         _menu: NativeMenu,
+        toggle_sidebar: MenuItem,
         commands: Vec<(MenuId, Command)>,
         events: Receiver<MenuId>,
     }
@@ -36,6 +38,11 @@ mod imp {
             let new_task = item("New Task", Modifiers::META, Code::KeyN);
             let find = item("Find Tasks", Modifiers::META, Code::KeyF);
             let settings = item("Settings…", Modifiers::META, Code::Comma);
+            let toggle_sidebar = item(
+                "Hide Sidebar",
+                Modifiers::META | Modifiers::CONTROL,
+                Code::KeyS,
+            );
 
             let app = Submenu::with_items(
                 "Tasks",
@@ -69,6 +76,7 @@ mod imp {
                 "View",
                 true,
                 &[
+                    &toggle_sidebar,
                     &find,
                     &PredefinedMenuItem::separator(),
                     &PredefinedMenuItem::fullscreen(None),
@@ -101,12 +109,19 @@ mod imp {
             Self {
                 _menu: menu,
                 commands: vec![
+                    (toggle_sidebar.id().clone(), Command::ToggleSidebar),
                     (new_task.id().clone(), Command::NewTask),
                     (find.id().clone(), Command::Find),
                     (settings.id().clone(), Command::Settings),
                 ],
+                toggle_sidebar,
                 events,
             }
+        }
+
+        pub fn set_sidebar_visible(&self, visible: bool) {
+            self.toggle_sidebar
+                .set_text(if visible { "Hide Sidebar" } else { "Show Sidebar" });
         }
 
         pub fn poll(&self, _ctx: &egui::Context) -> Vec<Command> {
@@ -129,7 +144,7 @@ mod imp {
 
     use super::Command;
 
-    const SHORTCUTS: [(KeyboardShortcut, Command); 3] = [
+    const SHORTCUTS: [(KeyboardShortcut, Command); 4] = [
         (
             KeyboardShortcut::new(Modifiers::COMMAND, Key::N),
             Command::NewTask,
@@ -142,6 +157,10 @@ mod imp {
             KeyboardShortcut::new(Modifiers::COMMAND, Key::Comma),
             Command::Settings,
         ),
+        (
+            KeyboardShortcut::new(Modifiers::COMMAND | Modifiers::ALT, Key::S),
+            Command::ToggleSidebar,
+        ),
     ];
 
     pub struct Menu;
@@ -150,6 +169,8 @@ mod imp {
         pub fn install(_ctx: &egui::Context) -> Self {
             Self
         }
+
+        pub fn set_sidebar_visible(&self, _visible: bool) {}
 
         pub fn poll(&self, ctx: &egui::Context) -> Vec<Command> {
             ctx.input_mut(|i| {

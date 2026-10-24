@@ -1,8 +1,9 @@
 //! Feature: the sidebar — status filters, progress summary and "Clear completed".
 
-use eframe::egui::{self, Align, CornerRadius, Layout, RichText};
+use eframe::egui::{self, Align, CornerRadius, Layout, RichText, Sense, vec2};
 use rusqlite::{Connection, Result};
 
+use crate::shared::icons::{self, Icon};
 use crate::shared::outcome::Outcome;
 use crate::shared::task::{Status, Task};
 use crate::shared::theme;
@@ -26,6 +27,15 @@ impl Filter {
         match self {
             Filter::All => "All tasks",
             Filter::Status(s) => s.label(),
+        }
+    }
+
+    fn icon(self) -> Icon {
+        match self {
+            Filter::All => Icon::All,
+            Filter::Status(Status::Todo) => Icon::Todo,
+            Filter::Status(Status::InProgress) => Icon::InProgress,
+            Filter::Status(Status::Done) => Icon::Done,
         }
     }
 
@@ -65,13 +75,19 @@ impl Filters {
         let mut output = Output::default();
 
         ui.add_space(4.0);
-        ui.label(RichText::new("✔  Tasks").size(22.0).strong());
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = 8.0;
+            let (rect, _) = ui.allocate_exact_size(vec2(icons::SIZE + 6.0, icons::SIZE + 6.0), Sense::hover());
+            icons::paint(ui.painter(), rect.center(), Icon::Logo, p.accent);
+            ui.label(RichText::new("Tasks").size(22.0).strong());
+        });
         ui.add_space(14.0);
 
+        caption(ui, "LIBRARY");
         for filter in Filter::OPTIONS {
             let count = tasks.iter().filter(|t| filter.matches(t)).count();
             let selected = active && self.selected == filter;
-            if nav_row(ui, filter.label(), &count.to_string(), selected).clicked() {
+            if nav_row(ui, filter.icon(), filter.label(), &count.to_string(), selected).clicked() {
                 self.selected = filter;
                 output.row_clicked = true;
             }

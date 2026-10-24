@@ -22,6 +22,10 @@ const TITLE_BAR_HEIGHT: f32 = 18.0;
 /// Room above the sidebar content for the macOS close/minimise/zoom buttons.
 const TRAFFIC_LIGHT_INSET: f32 = 22.0;
 
+const SIDEBAR_WIDTH: f32 = 230.0;
+const SIDEBAR_MIN_WIDTH: f32 = 200.0;
+const SIDEBAR_MAX_WIDTH: f32 = 320.0;
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum View {
     Tasks,
@@ -39,6 +43,7 @@ pub struct App {
     edit_task: EditTask,
     settings: Settings,
     menu: menu::Menu,
+    sidebar_visible: bool,
 }
 
 impl App {
@@ -58,6 +63,7 @@ impl App {
             edit_task: EditTask::new(),
             settings,
             menu: menu::Menu::install(&cc.egui_ctx),
+            sidebar_visible: true,
         };
         app.reload();
         Ok(app)
@@ -89,6 +95,10 @@ impl App {
                 self.task_list.focus_search();
             }
             Command::Settings => self.view = View::Settings,
+            Command::ToggleSidebar => {
+                self.sidebar_visible = !self.sidebar_visible;
+                self.menu.set_sidebar_visible(self.sidebar_visible);
+            }
         }
     }
 
@@ -127,13 +137,14 @@ impl App {
     fn tasks_page(&mut self, ui: &mut egui::Ui) {
         let filter = self.filters.selected();
         self.task_list.header(ui, filter.label());
-        ui.add_space(6.0);
+        ui.add_space(14.0);
 
         if let Some(outcome) = self.add_task.show(ui, &self.conn) {
             self.handle(outcome);
         }
 
         self.error_banner(ui);
+        ui.add_space(8.0);
 
         let event = self
             .task_list
@@ -168,18 +179,25 @@ impl eframe::App for App {
 
         let p = theme::palette(ui.ctx());
 
-        Panel::left("sidebar")
-            .exact_size(230.0)
-            .resizable(false)
-            .show_separator_line(false)
-            .frame(Frame::new().fill(p.sidebar).inner_margin(Margin::same(18)))
-            .show(ui, |ui| self.sidebar(ui));
+        if self.sidebar_visible {
+            Panel::left("sidebar")
+                .default_size(SIDEBAR_WIDTH)
+                .size_range(SIDEBAR_MIN_WIDTH..=SIDEBAR_MAX_WIDTH)
+                .resizable(true)
+                .show_separator_line(false)
+                .frame(Frame::new().fill(p.sidebar).inner_margin(Margin::same(18)))
+                .show(ui, |ui| self.sidebar(ui));
+        }
 
+        let top = if self.sidebar_visible { 22 } else { 22 + TRAFFIC_LIGHT_INSET as i8 };
         CentralPanel::default()
             .frame(
-                Frame::new()
-                    .fill(p.bg)
-                    .inner_margin(Margin::symmetric(28, 22)),
+                Frame::new().fill(p.bg).inner_margin(Margin {
+                    left: 28,
+                    right: 28,
+                    top,
+                    bottom: 22,
+                }),
             )
             .show(ui, |ui| self.main_panel(ui));
 

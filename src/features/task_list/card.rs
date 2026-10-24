@@ -13,57 +13,63 @@ pub enum Action {
     Delete(i64),
 }
 
+/// Width kept free on the right of a card for the Edit and Delete buttons.
+const BUTTONS_WIDTH: f32 = 130.0;
+
 pub fn show(ui: &mut egui::Ui, task: &Task, today: NaiveDate) -> Option<Action> {
     let p = theme::palette(ui.ctx());
     let look = theme::appearance(ui.ctx());
+    let compact = look.compact_cards;
     let mut action = None;
     let done = task.is_done();
-    let vertical_padding = if look.compact_cards { 8 } else { 14 };
+    let margin = if compact { Margin::symmetric(16, 9) } else { Margin::symmetric(22, 20) };
 
     let card = ui.scope_builder(UiBuilder::new().sense(Sense::click()), |ui| {
         Frame::new()
             .fill(p.card)
             .stroke(Stroke::new(1.0, p.border))
             .corner_radius(CornerRadius::same(12))
-            .inner_margin(Margin::symmetric(16, vertical_padding))
+            .inner_margin(margin)
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 ui.horizontal(|ui| {
+                    ui.spacing_mut().item_spacing.x = if compact { 12.0 } else { 16.0 };
                     if status_circle(ui, &p, task.status).clicked() {
                         let next = if done { Status::Todo } else { Status::Done };
                         action = Some(Action::SetStatus(task.id, next));
                     }
 
                     ui.vertical(|ui| {
-                        if look.compact_cards {
-                            ui.spacing_mut().item_spacing.y = 4.0;
-                        }
+                        ui.set_max_width((ui.available_width() - BUTTONS_WIDTH).max(160.0));
+                        ui.spacing_mut().item_spacing.y = if compact { 3.0 } else { 10.0 };
+
                         let mut title = RichText::new(&task.title).size(16.0).strong();
                         if done {
                             title = title.strikethrough().color(p.muted);
                         }
-                        ui.label(title);
+
+                        if compact {
+                            ui.horizontal_wrapped(|ui| {
+                                ui.spacing_mut().item_spacing = vec2(8.0, 3.0);
+                                ui.label(title);
+                                meta(ui, &p, task, today, &mut action);
+                            });
+                        } else {
+                            ui.label(title);
+                        }
 
                         if look.show_notes && !task.notes.is_empty() {
                             let first_line = task.notes.lines().next().unwrap_or_default();
                             ui.label(RichText::new(first_line).small().color(p.muted));
                         }
 
-                        ui.horizontal(|ui| {
-                            ui.spacing_mut().item_spacing.x = 8.0;
-                            let status =
-                                pill(ui, task.status.label(), status_color(&p, task.status))
-                                    .interact(Sense::click())
-                                    .on_hover_text("Click to move to the next status")
-                                    .on_hover_cursor(egui::CursorIcon::PointingHand);
-                            if status.clicked() {
-                                action = Some(Action::SetStatus(task.id, task.status.next()));
-                            }
-                            pill(ui, task.priority.label(), priority_color(&p, task.priority));
-                            if let Some((text, color)) = due_label(&p, task, today) {
-                                ui.label(RichText::new(text).small().color(color));
-                            }
-                        });
+                        if !compact {
+                            ui.add_space(2.0);
+                            ui.horizontal_wrapped(|ui| {
+                                ui.spacing_mut().item_spacing = vec2(8.0, 6.0);
+                                meta(ui, &p, task, today, &mut action);
+                            });
+                        }
                     });
 
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
@@ -101,6 +107,20 @@ pub fn show(ui: &mut egui::Ui, task: &Task, today: NaiveDate) -> Option<Action> 
     });
 
     action
+}
+
+fn meta(ui: &mut egui::Ui, p: &Palette, task: &Task, today: NaiveDate, action: &mut Option<Action>) {
+    let status = pill(ui, task.status.label(), status_color(p, task.status))
+        .interact(Sense::click())
+        .on_hover_text("Click to move to the next status")
+        .on_hover_cursor(egui::CursorIcon::PointingHand);
+    if status.clicked() {
+        *action = Some(Action::SetStatus(task.id, task.status.next()));
+    }
+    pill(ui, task.priority.label(), priority_color(p, task.priority));
+    if let Some((text, color)) = due_label(p, task, today) {
+        ui.label(RichText::new(text).small().color(color));
+    }
 }
 
 fn priority_color(p: &Palette, priority: Priority) -> Color32 {

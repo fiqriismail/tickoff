@@ -6,6 +6,7 @@ mod store;
 use eframe::egui::{self, CornerRadius, Frame, Margin, RichText, Stroke};
 use rusqlite::{Connection, Result};
 
+use crate::shared::icons::Icon;
 use crate::shared::outcome::Outcome;
 use crate::shared::theme::{self, Appearance, ThemeMode, UiScale};
 use crate::shared::widgets::{caption, nav_row};
@@ -29,7 +30,7 @@ impl Settings {
 
     /// The sidebar entry that opens this page.
     pub fn nav_row(&self, ui: &mut egui::Ui, active: bool) -> egui::Response {
-        nav_row(ui, "Settings", "", active)
+        nav_row(ui, Icon::Settings, "Settings", "", active)
     }
 
     /// Draws the page. Changes are applied to the UI immediately and saved.
@@ -45,8 +46,6 @@ impl Settings {
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
             .show(ui, |ui| {
-                ui.set_max_width(680.0);
-
                 Frame::new()
                     .fill(p.card)
                     .stroke(Stroke::new(1.0, p.border))
