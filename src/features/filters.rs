@@ -79,7 +79,8 @@ impl Filters {
         ui.add_space(4.0);
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 8.0;
-            let (rect, _) = ui.allocate_exact_size(vec2(icons::SIZE + 6.0, icons::SIZE + 6.0), Sense::hover());
+            let (rect, _) =
+                ui.allocate_exact_size(vec2(icons::SIZE + 6.0, icons::SIZE + 6.0), Sense::hover());
             icons::paint(ui.painter(), rect.center(), Icon::Logo, p.accent);
             ui.label(RichText::new("Tasks").size(22.0).strong());
         });
@@ -89,7 +90,15 @@ impl Filters {
         for filter in Filter::OPTIONS {
             let count = tasks.count(filter.status());
             let selected = active && self.selected == filter;
-            if nav_row(ui, filter.icon(), filter.label(), &count.to_string(), selected).clicked() {
+            if nav_row(
+                ui,
+                filter.icon(),
+                filter.label(),
+                &count.to_string(),
+                selected,
+            )
+            .clicked()
+            {
                 self.selected = filter;
                 output.row_clicked = true;
             }
@@ -98,7 +107,11 @@ impl Filters {
         ui.add_space(18.0);
         let total = tasks.count(None);
         let done = tasks.count(Some(Status::Done));
-        let fraction = if total == 0 { 0.0 } else { done as f32 / total as f32 };
+        let fraction = if total == 0 {
+            0.0
+        } else {
+            done as f32 / total as f32
+        };
         caption(ui, "PROGRESS");
         ui.add(
             egui::ProgressBar::new(fraction)

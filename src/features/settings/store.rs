@@ -7,12 +7,16 @@ use crate::shared::theme::{Accent, Appearance, ThemeMode, UiScale};
 pub fn load(conn: &Connection) -> Result<Appearance> {
     let mut appearance = Appearance::default();
     let mut stmt = conn.prepare("SELECT key, value FROM settings")?;
-    let rows = stmt.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))?;
+    let rows = stmt.query_map([], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+    })?;
 
     for row in rows {
         let (key, value) = row?;
         match key.as_str() {
-            "theme_mode" => appearance.mode = ThemeMode::from_key(&value).unwrap_or(appearance.mode),
+            "theme_mode" => {
+                appearance.mode = ThemeMode::from_key(&value).unwrap_or(appearance.mode)
+            }
             "accent" => appearance.accent = Accent::from_key(&value).unwrap_or(appearance.accent),
             "ui_scale" => appearance.scale = UiScale::from_key(&value).unwrap_or(appearance.scale),
             "compact_cards" => appearance.compact_cards = value == "true",

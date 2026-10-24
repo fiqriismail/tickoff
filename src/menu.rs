@@ -54,8 +54,7 @@ mod imp {
                 &PredefinedMenuItem::separator(),
                 &PredefinedMenuItem::quit(None),
             ],
-        )
-        ?;
+        )?;
         let file = Submenu::with_items(
             "File",
             true,
@@ -64,8 +63,7 @@ mod imp {
                 &PredefinedMenuItem::separator(),
                 &PredefinedMenuItem::close_window(None),
             ],
-        )
-        ?;
+        )?;
         let view = Submenu::with_items(
             "View",
             true,
@@ -75,8 +73,7 @@ mod imp {
                 &PredefinedMenuItem::separator(),
                 &PredefinedMenuItem::fullscreen(None),
             ],
-        )
-        ?;
+        )?;
         let window = Submenu::with_items(
             "Window",
             true,
@@ -86,8 +83,7 @@ mod imp {
                 &PredefinedMenuItem::separator(),
                 &PredefinedMenuItem::bring_all_to_front(None),
             ],
-        )
-        ?;
+        )?;
 
         let menu = NativeMenu::with_items(&[&app, &file, &view, &window])?;
         menu.init_for_nsapp();
@@ -136,8 +132,11 @@ mod imp {
         }
 
         pub fn set_sidebar_visible(&self, visible: bool) {
-            self.toggle_sidebar
-                .set_text(if visible { "Hide Sidebar" } else { "Show Sidebar" });
+            self.toggle_sidebar.set_text(if visible {
+                "Hide Sidebar"
+            } else {
+                "Show Sidebar"
+            });
         }
 
         pub fn poll(&self, _ctx: &egui::Context) -> Vec<Command> {

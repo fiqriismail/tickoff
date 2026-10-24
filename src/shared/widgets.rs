@@ -21,7 +21,12 @@ pub fn nav_row(ui: &mut Ui, icon: Icon, label: &str, detail: &str, selected: boo
 
     let painter = ui.painter();
     painter.rect_filled(rect, CornerRadius::same(8), background);
-    icons::paint(painter, rect.left_center() + vec2(12.0 + icons::SIZE / 2.0, 0.0), icon, p.accent);
+    icons::paint(
+        painter,
+        rect.left_center() + vec2(12.0 + icons::SIZE / 2.0, 0.0),
+        icon,
+        p.accent,
+    );
     painter.text(
         rect.left_center() + vec2(12.0 + icons::SIZE + 10.0, 0.0),
         Align2::LEFT_CENTER,

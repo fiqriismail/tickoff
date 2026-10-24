@@ -26,7 +26,11 @@ pub fn show(
     let compact = look.compact_cards;
     let mut action = None;
     let done = task.is_done();
-    let margin = if compact { Margin::symmetric(16, 9) } else { Margin::symmetric(22, 20) };
+    let margin = if compact {
+        Margin::symmetric(16, 9)
+    } else {
+        Margin::symmetric(22, 20)
+    };
 
     let card = ui.scope_builder(UiBuilder::new().sense(Sense::click()), |ui| {
         Frame::new()
@@ -113,7 +117,13 @@ pub fn show(
     action
 }
 
-fn meta(ui: &mut egui::Ui, p: &Palette, task: &Task, today: NaiveDate, action: &mut Option<Action>) {
+fn meta(
+    ui: &mut egui::Ui,
+    p: &Palette,
+    task: &Task,
+    today: NaiveDate,
+    action: &mut Option<Action>,
+) {
     let status = pill(ui, task.status.label(), status_color(p, task.status))
         .interact(Sense::click())
         .on_hover_text("Click to move to the next status")

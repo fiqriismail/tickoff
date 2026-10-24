@@ -56,15 +56,11 @@ impl Settings {
                         caption(ui, "APPEARANCE");
                         let a = &mut self.appearance;
 
-                        changed |= setting_row(
-                            ui,
-                            "Theme",
-                            "Light, dark, or follow your system",
-                            |ui| {
+                        changed |=
+                            setting_row(ui, "Theme", "Light, dark, or follow your system", |ui| {
                                 let options = ThemeMode::ALL.map(|m| (m, m.label()));
                                 segmented(ui, &mut a.mode, &options)
-                            },
-                        );
+                            });
                         ui.separator();
                         changed |= setting_row(
                             ui,
@@ -73,10 +69,11 @@ impl Settings {
                             |ui| accent_picker(ui, &mut a.accent),
                         );
                         ui.separator();
-                        changed |= setting_row(ui, "Text size", "Scales the whole interface", |ui| {
-                            let options = UiScale::ALL.map(|s| (s, s.label()));
-                            segmented(ui, &mut a.scale, &options)
-                        });
+                        changed |=
+                            setting_row(ui, "Text size", "Scales the whole interface", |ui| {
+                                let options = UiScale::ALL.map(|s| (s, s.label()));
+                                segmented(ui, &mut a.scale, &options)
+                            });
                     });
 
                 ui.add_space(6.0);

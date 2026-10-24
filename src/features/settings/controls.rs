@@ -1,5 +1,6 @@
 use eframe::egui::{
-    self, Align, Button, Color32, CornerRadius, Frame, Layout, Margin, RichText, Sense, Stroke, vec2,
+    self, Align, Button, Color32, CornerRadius, Frame, Layout, Margin, RichText, Sense, Stroke,
+    vec2,
 };
 
 use crate::shared::theme::{self, Accent};
@@ -30,7 +31,11 @@ pub fn segmented<T: Copy + PartialEq>(
                         RichText::new(*label).color(p.muted)
                     };
                     let button = Button::new(text)
-                        .fill(if selected { p.accent } else { Color32::TRANSPARENT })
+                        .fill(if selected {
+                            p.accent
+                        } else {
+                            Color32::TRANSPARENT
+                        })
                         .stroke(Stroke::NONE)
                         .corner_radius(CornerRadius::same(6))
                         .min_size(vec2(66.0, 0.0));
@@ -89,7 +94,11 @@ pub fn toggle(ui: &mut egui::Ui, on: &mut bool) -> bool {
     let t = ui.ctx().animate_bool_responsive(response.id, *on);
     let track_off = p.muted.gamma_multiply(0.35);
     let painter = ui.painter();
-    painter.rect_filled(rect, CornerRadius::same(12), track_off.lerp_to_gamma(p.accent, t));
+    painter.rect_filled(
+        rect,
+        CornerRadius::same(12),
+        track_off.lerp_to_gamma(p.accent, t),
+    );
     let knob_x = egui::lerp((rect.left() + 12.0)..=(rect.right() - 12.0), t);
     painter.circle_filled(egui::pos2(knob_x, rect.center().y), 9.0, Color32::WHITE);
 

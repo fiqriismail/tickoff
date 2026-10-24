@@ -87,7 +87,8 @@ impl TaskList {
                 ui.spacing_mut().item_spacing.x = 6.0;
                 ui.horizontal(|ui| {
                     // The header row lays out right-to-left, so children are added in reverse.
-                    let (rect, clear) = ui.allocate_exact_size(vec2(icons::SIZE, icons::SIZE), Sense::click());
+                    let (rect, clear) =
+                        ui.allocate_exact_size(vec2(icons::SIZE, icons::SIZE), Sense::click());
                     if !self.search.is_empty() {
                         let tint = if clear.hovered() { p.text } else { p.muted };
                         icons::paint(ui.painter(), rect.center(), Icon::Clear, tint);
@@ -108,10 +109,13 @@ impl TaskList {
                         edit.request_focus();
                     }
 
-                    let (rect, _) = ui.allocate_exact_size(vec2(icons::SIZE, icons::SIZE), Sense::hover());
+                    let (rect, _) =
+                        ui.allocate_exact_size(vec2(icons::SIZE, icons::SIZE), Sense::hover());
                     icons::paint(ui.painter(), rect.center(), Icon::Search, p.muted);
 
-                    if (edit.has_focus() || edit.lost_focus()) && ui.input(|i| i.key_pressed(Key::Escape)) {
+                    if (edit.has_focus() || edit.lost_focus())
+                        && ui.input(|i| i.key_pressed(Key::Escape))
+                    {
                         if self.search.is_empty() {
                             edit.surrender_focus();
                         } else {
@@ -168,7 +172,12 @@ impl TaskList {
                 let (mut first_y, mut end_y, mut y) = (0.0_f32, 0.0_f32, 0.0_f32);
                 let mut last_row_height = 0.0;
                 for (row, &index) in self.view.iter().enumerate() {
-                    let h = self.heights.get(&tasks.items()[index].id).copied().unwrap_or(estimate) + gap;
+                    let h = self
+                        .heights
+                        .get(&tasks.items()[index].id)
+                        .copied()
+                        .unwrap_or(estimate)
+                        + gap;
                     if first == rows && y + h > viewport.min.y {
                         first = row;
                         first_y = y;
@@ -242,7 +251,9 @@ impl TaskList {
                         .size(16.0)
                         .strong(),
                 );
-                ui.label(RichText::new("Check the spelling or try a different search.").color(p.muted));
+                ui.label(
+                    RichText::new("Check the spelling or try a different search.").color(p.muted),
+                );
             } else {
                 ui.label(RichText::new("🎉").size(40.0));
                 let message = if total == 0 {

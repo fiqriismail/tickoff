@@ -206,14 +206,12 @@ impl eframe::App for App {
             PAGE_TOP_MARGIN + TRAFFIC_LIGHT_INSET
         };
         CentralPanel::default()
-            .frame(
-                Frame::new().fill(p.bg).inner_margin(Margin {
-                    left: 28,
-                    right: 28,
-                    top: 0,
-                    bottom: 22,
-                }),
-            )
+            .frame(Frame::new().fill(p.bg).inner_margin(Margin {
+                left: 28,
+                right: 28,
+                top: 0,
+                bottom: 22,
+            }))
             .show(ui, |ui| {
                 ui.add_space(top);
                 self.main_panel(ui);

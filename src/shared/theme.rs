@@ -246,7 +246,11 @@ fn contrast(a: Color32, b: Color32) -> f32 {
 fn luminance(c: Color32) -> f32 {
     let channel = |v: u8| {
         let v = v as f32 / 255.0;
-        if v <= 0.03928 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+        if v <= 0.03928 {
+            v / 12.92
+        } else {
+            ((v + 0.055) / 1.055).powf(2.4)
+        }
     };
     0.2126 * channel(c.r()) + 0.7152 * channel(c.g()) + 0.0722 * channel(c.b())
 }
@@ -261,7 +265,8 @@ pub fn palette(ctx: &egui::Context) -> Palette {
 }
 
 pub fn appearance(ctx: &egui::Context) -> Appearance {
-    ctx.data(|d| d.get_temp(appearance_id())).unwrap_or_default()
+    ctx.data(|d| d.get_temp(appearance_id()))
+        .unwrap_or_default()
 }
 
 /// Installs `appearance` into the context: theme preference, styles for both
@@ -329,10 +334,18 @@ fn style_for(theme: Theme, accent: Accent) -> egui::Style {
     style.spacing.button_padding = vec2(12.0, 7.0);
     style.spacing.window_margin = Margin::same(20);
 
-    style.text_styles.insert(TextStyle::Body, FontId::proportional(15.0));
-    style.text_styles.insert(TextStyle::Button, FontId::proportional(15.0));
-    style.text_styles.insert(TextStyle::Small, FontId::proportional(12.5));
-    style.text_styles.insert(TextStyle::Heading, FontId::proportional(28.0));
+    style
+        .text_styles
+        .insert(TextStyle::Body, FontId::proportional(15.0));
+    style
+        .text_styles
+        .insert(TextStyle::Button, FontId::proportional(15.0));
+    style
+        .text_styles
+        .insert(TextStyle::Small, FontId::proportional(12.5));
+    style
+        .text_styles
+        .insert(TextStyle::Heading, FontId::proportional(28.0));
     style
 }
 
@@ -360,7 +373,10 @@ mod tests {
             for accent in Accent::ALL {
                 let p = Palette::new(theme, accent);
                 let ratio = contrast(p.on_accent, p.accent);
-                assert!(ratio >= 3.0, "{accent:?} on {theme:?} has contrast {ratio:.2}");
+                assert!(
+                    ratio >= 3.0,
+                    "{accent:?} on {theme:?} has contrast {ratio:.2}"
+                );
             }
         }
     }

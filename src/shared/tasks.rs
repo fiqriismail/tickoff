@@ -142,7 +142,10 @@ mod tests {
             status,
             due: String::new(),
         };
-        set.replace(vec![make("Buy Eggs", Status::Todo), make("Call", Status::Done)]);
+        set.replace(vec![
+            make("Buy Eggs", Status::Todo),
+            make("Call", Status::Done),
+        ]);
 
         assert_eq!(set.count(None), 2);
         assert_eq!(set.count(Some(Status::Done)), 1);
@@ -204,8 +207,20 @@ mod tests {
 
         let saved = load_all(&conn).unwrap().remove(0);
         assert_eq!(
-            (saved.title.as_str(), saved.notes.as_str(), saved.priority, saved.status, saved.due.as_str()),
-            ("new", "details", Priority::High, Status::InProgress, "2026-12-01")
+            (
+                saved.title.as_str(),
+                saved.notes.as_str(),
+                saved.priority,
+                saved.status,
+                saved.due.as_str()
+            ),
+            (
+                "new",
+                "details",
+                Priority::High,
+                Status::InProgress,
+                "2026-12-01"
+            )
         );
     }
 
