@@ -82,7 +82,7 @@ impl Filters {
             let (rect, _) =
                 ui.allocate_exact_size(vec2(icons::SIZE + 6.0, icons::SIZE + 6.0), Sense::hover());
             icons::paint(ui.painter(), rect.center(), Icon::Logo, p.accent);
-            ui.label(RichText::new("Tasks").size(22.0).strong());
+            ui.label(RichText::new("Tickoff").size(22.0).strong());
         });
         ui.add_space(14.0);
 

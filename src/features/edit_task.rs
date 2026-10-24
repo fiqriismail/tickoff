@@ -57,7 +57,7 @@ impl EditTask {
                 color: egui::Color32::from_black_alpha(90),
             });
 
-        let modal = Modal::new(Id::unique("hello_gui::edit_task"))
+        let modal = Modal::new(Id::unique("tickoff::edit_task"))
             .frame(frame)
             .show(ctx, |ui| {
                 ui.set_width(DIALOG_WIDTH);

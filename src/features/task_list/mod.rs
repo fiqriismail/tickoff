@@ -74,7 +74,7 @@ impl TaskList {
 
     fn search_field(&mut self, ui: &mut egui::Ui) {
         let p = theme::palette(ui.ctx());
-        let id = Id::unique("hello_gui::search");
+        let id = Id::unique("tickoff::search");
         let focused = ui.memory(|m| m.has_focus(id));
         let stroke = if focused { p.accent } else { p.border };
 

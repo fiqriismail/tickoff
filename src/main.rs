@@ -8,8 +8,8 @@ use eframe::egui;
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_title("Tasks")
-            .with_app_id("hello_gui")
+            .with_title("Tickoff")
+            .with_app_id("tickoff")
             .with_fullsize_content_view(true)
             .with_titlebar_shown(false)
             .with_title_shown(false)
@@ -19,7 +19,7 @@ fn main() -> eframe::Result {
     };
 
     eframe::run_native(
-        "Tasks",
+        "Tickoff",
         options,
         Box::new(|cc| Ok(Box::new(app::App::new(cc)?))),
     )

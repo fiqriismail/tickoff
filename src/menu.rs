@@ -39,10 +39,10 @@ mod imp {
         toggle_sidebar: &MenuItem,
     ) -> muda::Result<NativeMenu> {
         let app = Submenu::with_items(
-            "Tasks",
+            "Tickoff",
             true,
             &[
-                &PredefinedMenuItem::about(Some("About Tasks"), None),
+                &PredefinedMenuItem::about(Some("About Tickoff"), None),
                 &PredefinedMenuItem::separator(),
                 settings,
                 &PredefinedMenuItem::separator(),

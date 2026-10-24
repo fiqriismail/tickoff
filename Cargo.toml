@@ -1,10 +1,11 @@
 [package]
-name = "hello_gui"
+name = "tickoff"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
 
 [[bin]]
-name = "Tasks"
+name = "Tickoff"
 path = "src/main.rs"
 
 [dependencies]

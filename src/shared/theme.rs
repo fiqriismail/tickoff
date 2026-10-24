@@ -256,7 +256,7 @@ fn luminance(c: Color32) -> f32 {
 }
 
 fn appearance_id() -> Id {
-    Id::unique("hello_gui::appearance")
+    Id::unique("tickoff::appearance")
 }
 
 /// The palette for whichever theme (light/dark) is active right now.

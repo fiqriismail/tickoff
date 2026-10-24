@@ -232,7 +232,7 @@ fn title_bar_drag_area(ui: &mut egui::Ui) {
     let strip = Rect::from_min_size(full.min, vec2(full.width(), TITLE_BAR_HEIGHT));
     let response = ui.interact(
         strip,
-        Id::unique("hello_gui::title_bar"),
+        Id::unique("tickoff::title_bar"),
         Sense::click_and_drag(),
     );
 
