@@ -1,5 +1,5 @@
 use eframe::egui::{
-    Align2, Button, Color32, CornerRadius, FontId, Response, RichText, Sense, Ui, vec2,
+    Align2, Button, Color32, CornerRadius, CursorIcon, FontId, Response, RichText, Sense, Ui, vec2,
 };
 
 use super::theme;
@@ -7,8 +7,7 @@ use super::theme;
 /// A full-width sidebar entry with a right-aligned `detail` (e.g. a count).
 pub fn nav_row(ui: &mut Ui, label: &str, detail: &str, selected: bool) -> Response {
     let p = theme::palette(ui.ctx());
-    let (rect, response) =
-        ui.allocate_exact_size(vec2(ui.available_width(), 36.0), Sense::click());
+    let (rect, response) = ui.allocate_exact_size(vec2(ui.available_width(), 36.0), Sense::click());
     let background = if selected {
         p.accent.gamma_multiply(0.18)
     } else if response.hovered() {
@@ -34,7 +33,7 @@ pub fn nav_row(ui: &mut Ui, label: &str, detail: &str, selected: bool) -> Respon
         FontId::proportional(13.0),
         p.muted,
     );
-    response.on_hover_cursor(eframe::egui::CursorIcon::PointingHand)
+    response.on_hover_cursor(CursorIcon::PointingHand)
 }
 
 pub fn primary_button(ui: &mut Ui, text: &str) -> Response {
@@ -44,6 +43,7 @@ pub fn primary_button(ui: &mut Ui, text: &str) -> Response {
             .fill(p.accent)
             .min_size(vec2(80.0, 0.0)),
     )
+    .on_hover_cursor(CursorIcon::PointingHand)
 }
 
 /// Small muted text used above form fields and section headings.

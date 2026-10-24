@@ -1,5 +1,6 @@
 mod app;
 mod features;
+mod menu;
 mod shared;
 
 use eframe::egui;

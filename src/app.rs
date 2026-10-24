@@ -12,6 +12,7 @@ use crate::features::edit_task::EditTask;
 use crate::features::filters::Filters;
 use crate::features::settings::Settings;
 use crate::features::task_list::{self, TaskList};
+use crate::menu::{self, Command};
 use crate::shared::outcome::Outcome;
 use crate::shared::task::Task;
 use crate::shared::{db, theme};
@@ -37,6 +38,7 @@ pub struct App {
     task_list: TaskList,
     edit_task: EditTask,
     settings: Settings,
+    menu: menu::Menu,
 }
 
 impl App {
@@ -55,6 +57,7 @@ impl App {
             task_list: TaskList::new(),
             edit_task: EditTask::new(),
             settings,
+            menu: menu::Menu::install(&cc.egui_ctx),
         };
         app.reload();
         Ok(app)
@@ -75,9 +78,27 @@ impl App {
         self.reload();
     }
 
+    fn run(&mut self, command: Command) {
+        match command {
+            Command::NewTask => {
+                self.view = View::Tasks;
+                self.add_task.focus();
+            }
+            Command::Find => {
+                self.view = View::Tasks;
+                self.task_list.focus_search();
+            }
+            Command::Settings => self.view = View::Settings,
+        }
+    }
+
     fn sidebar(&mut self, ui: &mut egui::Ui) {
         ui.with_layout(Layout::bottom_up(Align::Min), |ui| {
-            if self.settings.nav_row(ui, self.view == View::Settings).clicked() {
+            if self
+                .settings
+                .nav_row(ui, self.view == View::Settings)
+                .clicked()
+            {
                 self.view = View::Settings;
             }
 
@@ -141,6 +162,10 @@ impl App {
 
 impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        for command in self.menu.poll(ui.ctx()) {
+            self.run(command);
+        }
+
         let p = theme::palette(ui.ctx());
 
         Panel::left("sidebar")
@@ -151,7 +176,11 @@ impl eframe::App for App {
             .show(ui, |ui| self.sidebar(ui));
 
         CentralPanel::default()
-            .frame(Frame::new().fill(p.bg).inner_margin(Margin::symmetric(28, 22)))
+            .frame(
+                Frame::new()
+                    .fill(p.bg)
+                    .inner_margin(Margin::symmetric(28, 22)),
+            )
             .show(ui, |ui| self.main_panel(ui));
 
         if let Some(outcome) = self.edit_task.show(&ui.ctx().clone(), &self.conn) {
@@ -167,7 +196,11 @@ impl eframe::App for App {
 fn title_bar_drag_area(ui: &mut egui::Ui) {
     let full = ui.max_rect();
     let strip = Rect::from_min_size(full.min, vec2(full.width(), TITLE_BAR_HEIGHT));
-    let response = ui.interact(strip, Id::unique("hello_gui::title_bar"), Sense::click_and_drag());
+    let response = ui.interact(
+        strip,
+        Id::unique("hello_gui::title_bar"),
+        Sense::click_and_drag(),
+    );
 
     let ctx = ui.ctx();
     if response.double_clicked() {

@@ -25,13 +25,20 @@ pub enum Event {
 
 pub struct TaskList {
     search: String,
+    focus_search: bool,
 }
 
 impl TaskList {
     pub fn new() -> Self {
         Self {
             search: String::new(),
+            focus_search: false,
         }
+    }
+
+    /// Puts the cursor in the search box on the next frame.
+    pub fn focus_search(&mut self) {
+        self.focus_search = true;
     }
 
     pub fn header(&mut self, ui: &mut egui::Ui, title: &str) {
@@ -44,12 +51,15 @@ impl TaskList {
                 );
             });
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                ui.add(
+                let search = ui.add(
                     TextEdit::singleline(&mut self.search)
                         .hint_text("Search tasks…")
                         .desired_width(220.0)
                         .margin(Margin::symmetric(10, 8)),
                 );
+                if std::mem::take(&mut self.focus_search) {
+                    search.request_focus();
+                }
             });
         });
     }
@@ -70,7 +80,10 @@ impl TaskList {
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
             .show(ui, |ui| {
-                for task in tasks.iter().filter(|t| visible(t) && matches_query(t, &query)) {
+                for task in tasks
+                    .iter()
+                    .filter(|t| visible(t) && matches_query(t, &query))
+                {
                     shown += 1;
                     if let Some(a) = card::show(ui, task, today) {
                         action = Some(a);

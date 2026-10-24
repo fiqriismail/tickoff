@@ -10,6 +10,7 @@ use crate::shared::widgets::primary_button;
 pub struct AddTask {
     title: String,
     priority: Priority,
+    focus_requested: bool,
 }
 
 impl AddTask {
@@ -17,7 +18,13 @@ impl AddTask {
         Self {
             title: String::new(),
             priority: Priority::Medium,
+            focus_requested: false,
         }
+    }
+
+    /// Puts the cursor in the title field on the next frame.
+    pub fn focus(&mut self) {
+        self.focus_requested = true;
     }
 
     pub fn show(&mut self, ui: &mut egui::Ui, conn: &Connection) -> Option<Outcome> {
@@ -31,6 +38,9 @@ impl AddTask {
                     .desired_width(width)
                     .margin(Margin::symmetric(12, 10)),
             );
+            if std::mem::take(&mut self.focus_requested) {
+                response.request_focus();
+            }
             let submitted = response.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter));
 
             egui::ComboBox::from_id_salt("new_priority")

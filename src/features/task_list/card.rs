@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 use eframe::egui::{
     self, Align, Button, Color32, CornerRadius, Frame, Layout, Margin, RichText, Sense, Stroke,
-    vec2,
+    UiBuilder, vec2,
 };
 
 use crate::shared::task::{Priority, Status, Task};
@@ -20,60 +20,85 @@ pub fn show(ui: &mut egui::Ui, task: &Task, today: NaiveDate) -> Option<Action> 
     let done = task.is_done();
     let vertical_padding = if look.compact_cards { 8 } else { 14 };
 
-    Frame::new()
-        .fill(p.card)
-        .stroke(Stroke::new(1.0, p.border))
-        .corner_radius(CornerRadius::same(12))
-        .inner_margin(Margin::symmetric(16, vertical_padding))
-        .show(ui, |ui| {
-            ui.set_width(ui.available_width());
-            ui.horizontal(|ui| {
-                if status_circle(ui, &p, task.status).clicked() {
-                    let next = if done { Status::Todo } else { Status::Done };
-                    action = Some(Action::SetStatus(task.id, next));
-                }
-
-                ui.vertical(|ui| {
-                    if look.compact_cards {
-                        ui.spacing_mut().item_spacing.y = 4.0;
-                    }
-                    let mut title = RichText::new(&task.title).size(16.0).strong();
-                    if done {
-                        title = title.strikethrough().color(p.muted);
-                    }
-                    ui.label(title);
-
-                    if look.show_notes && !task.notes.is_empty() {
-                        let first_line = task.notes.lines().next().unwrap_or_default();
-                        ui.label(RichText::new(first_line).small().color(p.muted));
+    let card = ui.scope_builder(UiBuilder::new().sense(Sense::click()), |ui| {
+        Frame::new()
+            .fill(p.card)
+            .stroke(Stroke::new(1.0, p.border))
+            .corner_radius(CornerRadius::same(12))
+            .inner_margin(Margin::symmetric(16, vertical_padding))
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                ui.horizontal(|ui| {
+                    if status_circle(ui, &p, task.status).clicked() {
+                        let next = if done { Status::Todo } else { Status::Done };
+                        action = Some(Action::SetStatus(task.id, next));
                     }
 
-                    ui.horizontal(|ui| {
-                        ui.spacing_mut().item_spacing.x = 8.0;
-                        let status = pill(ui, task.status.label(), status_color(&p, task.status))
-                            .interact(Sense::click())
-                            .on_hover_text("Click to move to the next status")
-                            .on_hover_cursor(egui::CursorIcon::PointingHand);
-                        if status.clicked() {
-                            action = Some(Action::SetStatus(task.id, task.status.next()));
+                    ui.vertical(|ui| {
+                        if look.compact_cards {
+                            ui.spacing_mut().item_spacing.y = 4.0;
                         }
-                        pill(ui, task.priority.label(), priority_color(&p, task.priority));
-                        if let Some((text, color)) = due_label(&p, task, today) {
-                            ui.label(RichText::new(text).small().color(color));
+                        let mut title = RichText::new(&task.title).size(16.0).strong();
+                        if done {
+                            title = title.strikethrough().color(p.muted);
+                        }
+                        ui.label(title);
+
+                        if look.show_notes && !task.notes.is_empty() {
+                            let first_line = task.notes.lines().next().unwrap_or_default();
+                            ui.label(RichText::new(first_line).small().color(p.muted));
+                        }
+
+                        ui.horizontal(|ui| {
+                            ui.spacing_mut().item_spacing.x = 8.0;
+                            let status =
+                                pill(ui, task.status.label(), status_color(&p, task.status))
+                                    .interact(Sense::click())
+                                    .on_hover_text("Click to move to the next status")
+                                    .on_hover_cursor(egui::CursorIcon::PointingHand);
+                            if status.clicked() {
+                                action = Some(Action::SetStatus(task.id, task.status.next()));
+                            }
+                            pill(ui, task.priority.label(), priority_color(&p, task.priority));
+                            if let Some((text, color)) = due_label(&p, task, today) {
+                                ui.label(RichText::new(text).small().color(color));
+                            }
+                        });
+                    });
+
+                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                        if text_button(ui, &p, "Delete", "Delete this task").clicked() {
+                            action = Some(Action::Delete(task.id));
+                        }
+                        if text_button(ui, &p, "Edit", "Edit this task").clicked() {
+                            action = Some(Action::Edit(task.clone()));
                         }
                     });
                 });
-
-                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    if text_button(ui, &p, "Delete", "Delete this task").clicked() {
-                        action = Some(Action::Delete(task.id));
-                    }
-                    if text_button(ui, &p, "Edit", "Edit this task").clicked() {
-                        action = Some(Action::Edit(task.clone()));
-                    }
-                });
             });
-        });
+    });
+
+    card.response.context_menu(|ui| {
+        if ui.button("Edit…").clicked() {
+            action = Some(Action::Edit(task.clone()));
+        }
+        let toggle = if done {
+            "Mark as To do"
+        } else {
+            "Mark as Done"
+        };
+        if ui.button(toggle).clicked() {
+            let next = if done { Status::Todo } else { Status::Done };
+            action = Some(Action::SetStatus(task.id, next));
+        }
+        ui.separator();
+        if ui.button("Delete").clicked() {
+            action = Some(Action::Delete(task.id));
+        }
+        if action.is_some() {
+            ui.close();
+        }
+    });
 
     action
 }
@@ -135,7 +160,11 @@ fn status_circle(ui: &mut egui::Ui, p: &Palette, status: Status) -> egui::Respon
     let (rect, response) = ui.allocate_exact_size(vec2(24.0, 24.0), Sense::click());
     let center = rect.center();
     let painter = ui.painter();
-    let ring = if response.hovered() { p.accent } else { status_color(p, status) };
+    let ring = if response.hovered() {
+        p.accent
+    } else {
+        status_color(p, status)
+    };
 
     match status {
         Status::Done => {
@@ -184,15 +213,30 @@ mod tests {
 
     #[test]
     fn due_labels_are_relative_to_today() {
-        assert_eq!(label(&task(Status::Todo, "2026-10-24")).unwrap(), "📅 Today");
-        assert_eq!(label(&task(Status::Todo, "2026-10-25")).unwrap(), "📅 Tomorrow");
-        assert_eq!(label(&task(Status::Todo, "2026-10-22")).unwrap(), "📅 Overdue · Oct 22");
-        assert_eq!(label(&task(Status::Todo, "2026-11-02")).unwrap(), "📅 Nov 2");
+        assert_eq!(
+            label(&task(Status::Todo, "2026-10-24")).unwrap(),
+            "📅 Today"
+        );
+        assert_eq!(
+            label(&task(Status::Todo, "2026-10-25")).unwrap(),
+            "📅 Tomorrow"
+        );
+        assert_eq!(
+            label(&task(Status::Todo, "2026-10-22")).unwrap(),
+            "📅 Overdue · Oct 22"
+        );
+        assert_eq!(
+            label(&task(Status::Todo, "2026-11-02")).unwrap(),
+            "📅 Nov 2"
+        );
     }
 
     #[test]
     fn finished_tasks_are_never_overdue_and_undated_tasks_have_no_label() {
-        assert_eq!(label(&task(Status::Done, "2026-10-22")).unwrap(), "📅 Oct 22");
+        assert_eq!(
+            label(&task(Status::Done, "2026-10-22")).unwrap(),
+            "📅 Oct 22"
+        );
         assert!(label(&task(Status::Todo, "")).is_none());
     }
 }
