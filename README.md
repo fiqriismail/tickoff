@@ -4,6 +4,13 @@ A small, modern-looking desktop task manager written in Rust with [egui](https:/
 
 > **Built with Claude Code.** This project was developed with [Claude Code](https://claude.com/claude-code), Anthropic's AI coding assistant, working interactively with the author.
 
+## Screenshots
+
+| Light | Dark |
+|---|---|
+| ![Task list in light mode](docs/screenshots/tasks-light.png) | ![Task list in dark mode with the violet accent](docs/screenshots/tasks-dark.png) |
+| ![Settings page](docs/screenshots/settings.png) | ![Edit task dialog](docs/screenshots/edit-task.png) |
+
 ## Features
 
 - Add, edit, complete and delete tasks, each with a title, notes, priority (Low / Medium / High), status (To do / In progress / Done) and optional due date
