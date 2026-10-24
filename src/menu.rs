@@ -22,7 +22,7 @@ mod imp {
     use super::Command;
 
     pub struct Menu {
-        _menu: NativeMenu,
+        _menu: Option<NativeMenu>,
         toggle_sidebar: MenuItem,
         commands: Vec<(MenuId, Command)>,
         events: Receiver<MenuId>,
@@ -30,6 +30,69 @@ mod imp {
 
     fn item(label: &str, modifiers: Modifiers, code: Code) -> MenuItem {
         MenuItem::new(label, true, Some(Accelerator::new(modifiers, code)))
+    }
+
+    fn build(
+        new_task: &MenuItem,
+        find: &MenuItem,
+        settings: &MenuItem,
+        toggle_sidebar: &MenuItem,
+    ) -> muda::Result<NativeMenu> {
+        let app = Submenu::with_items(
+            "Tasks",
+            true,
+            &[
+                &PredefinedMenuItem::about(Some("About Tasks"), None),
+                &PredefinedMenuItem::separator(),
+                settings,
+                &PredefinedMenuItem::separator(),
+                &PredefinedMenuItem::services(None),
+                &PredefinedMenuItem::separator(),
+                &PredefinedMenuItem::hide(None),
+                &PredefinedMenuItem::hide_others(None),
+                &PredefinedMenuItem::show_all(None),
+                &PredefinedMenuItem::separator(),
+                &PredefinedMenuItem::quit(None),
+            ],
+        )
+        ?;
+        let file = Submenu::with_items(
+            "File",
+            true,
+            &[
+                new_task,
+                &PredefinedMenuItem::separator(),
+                &PredefinedMenuItem::close_window(None),
+            ],
+        )
+        ?;
+        let view = Submenu::with_items(
+            "View",
+            true,
+            &[
+                toggle_sidebar,
+                find,
+                &PredefinedMenuItem::separator(),
+                &PredefinedMenuItem::fullscreen(None),
+            ],
+        )
+        ?;
+        let window = Submenu::with_items(
+            "Window",
+            true,
+            &[
+                &PredefinedMenuItem::minimize(None),
+                &PredefinedMenuItem::maximize(None),
+                &PredefinedMenuItem::separator(),
+                &PredefinedMenuItem::bring_all_to_front(None),
+            ],
+        )
+        ?;
+
+        let menu = NativeMenu::with_items(&[&app, &file, &view, &window])?;
+        menu.init_for_nsapp();
+        window.set_as_windows_menu_for_nsapp();
+        Ok(menu)
     }
 
     impl Menu {
@@ -44,60 +107,13 @@ mod imp {
                 Code::KeyS,
             );
 
-            let app = Submenu::with_items(
-                "Tasks",
-                true,
-                &[
-                    &PredefinedMenuItem::about(Some("About Tasks"), None),
-                    &PredefinedMenuItem::separator(),
-                    &settings,
-                    &PredefinedMenuItem::separator(),
-                    &PredefinedMenuItem::services(None),
-                    &PredefinedMenuItem::separator(),
-                    &PredefinedMenuItem::hide(None),
-                    &PredefinedMenuItem::hide_others(None),
-                    &PredefinedMenuItem::show_all(None),
-                    &PredefinedMenuItem::separator(),
-                    &PredefinedMenuItem::quit(None),
-                ],
-            )
-            .expect("build app menu");
-            let file = Submenu::with_items(
-                "File",
-                true,
-                &[
-                    &new_task,
-                    &PredefinedMenuItem::separator(),
-                    &PredefinedMenuItem::close_window(None),
-                ],
-            )
-            .expect("build file menu");
-            let view = Submenu::with_items(
-                "View",
-                true,
-                &[
-                    &toggle_sidebar,
-                    &find,
-                    &PredefinedMenuItem::separator(),
-                    &PredefinedMenuItem::fullscreen(None),
-                ],
-            )
-            .expect("build view menu");
-            let window = Submenu::with_items(
-                "Window",
-                true,
-                &[
-                    &PredefinedMenuItem::minimize(None),
-                    &PredefinedMenuItem::maximize(None),
-                    &PredefinedMenuItem::separator(),
-                    &PredefinedMenuItem::bring_all_to_front(None),
-                ],
-            )
-            .expect("build window menu");
-
-            let menu = NativeMenu::with_items(&[&app, &file, &view, &window]).expect("build menu");
-            menu.init_for_nsapp();
-            window.set_as_windows_menu_for_nsapp();
+            let menu = match build(&new_task, &find, &settings, &toggle_sidebar) {
+                Ok(menu) => Some(menu),
+                Err(error) => {
+                    eprintln!("could not build the menu bar: {error}");
+                    None
+                }
+            };
 
             let (sender, events) = mpsc::channel();
             let ctx = ctx.clone();

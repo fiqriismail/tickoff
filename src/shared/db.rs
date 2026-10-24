@@ -1,9 +1,10 @@
+use std::error::Error;
 use std::path::PathBuf;
 
 use rusqlite::{Connection, Result};
 
-pub fn open() -> Result<Connection> {
-    let conn = Connection::open(db_path())?;
+pub fn open() -> Result<Connection, Box<dyn Error + Send + Sync>> {
+    let conn = Connection::open(db_path()?)?;
     migrate(&conn)?;
     Ok(conn)
 }
@@ -33,13 +34,11 @@ fn migrate(conn: &Connection) -> Result<()> {
     )
 }
 
-/// `~/.hello_gui/tasks.db`, falling back to the working directory.
-fn db_path() -> PathBuf {
-    if let Some(home) = std::env::var_os("HOME") {
-        let dir = PathBuf::from(home).join(".hello_gui");
-        if std::fs::create_dir_all(&dir).is_ok() {
-            return dir.join("tasks.db");
-        }
-    }
-    PathBuf::from("tasks.db")
+/// `<home>/.hello_gui/tasks.db`, created on first run.
+fn db_path() -> Result<PathBuf, Box<dyn Error + Send + Sync>> {
+    let home = dirs::home_dir().ok_or("could not find your home directory")?;
+    let dir = home.join(".hello_gui");
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("could not create {}: {e}", dir.display()))?;
+    Ok(dir.join("tasks.db"))
 }

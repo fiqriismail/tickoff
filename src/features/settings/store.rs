@@ -31,14 +31,16 @@ pub fn save(conn: &Connection, appearance: &Appearance) -> Result<()> {
         ("compact_cards", bool_key(appearance.compact_cards)),
         ("show_notes", bool_key(appearance.show_notes)),
     ];
+    // One transaction, so a failure never leaves a half-applied set of settings.
+    let tx = conn.unchecked_transaction()?;
     for (key, value) in entries {
-        conn.execute(
+        tx.execute(
             "INSERT INTO settings (key, value) VALUES (?1, ?2)
              ON CONFLICT(key) DO UPDATE SET value = excluded.value",
             (key, value),
         )?;
     }
-    Ok(())
+    tx.commit()
 }
 
 fn bool_key(value: bool) -> &'static str {
@@ -70,6 +72,27 @@ mod tests {
         assert_eq!(load(&conn).unwrap(), custom);
 
         save(&conn, &Appearance::default()).unwrap();
+        assert_eq!(load(&conn).unwrap(), Appearance::default());
+    }
+
+    #[test]
+    fn a_failed_save_leaves_the_old_settings_untouched() {
+        let conn = db::open_in_memory().unwrap();
+        save(&conn, &Appearance::default()).unwrap();
+        conn.execute_batch(
+            "CREATE TRIGGER reject_scale BEFORE UPDATE ON settings
+             WHEN NEW.key = 'ui_scale' BEGIN SELECT RAISE(ABORT, 'nope'); END;",
+        )
+        .unwrap();
+
+        let custom = Appearance {
+            mode: ThemeMode::Light,
+            accent: Accent::Teal,
+            scale: UiScale::Large,
+            compact_cards: true,
+            show_notes: false,
+        };
+        assert!(save(&conn, &custom).is_err());
         assert_eq!(load(&conn).unwrap(), Appearance::default());
     }
 

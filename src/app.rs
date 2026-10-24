@@ -21,6 +21,8 @@ use crate::shared::{db, theme};
 const TITLE_BAR_HEIGHT: f32 = 18.0;
 /// Room above the sidebar content for the macOS close/minimise/zoom buttons.
 const TRAFFIC_LIGHT_INSET: f32 = 22.0;
+/// Gap between the top of the window and the main page content.
+const PAGE_TOP_MARGIN: f32 = 22.0;
 
 const SIDEBAR_WIDTH: f32 = 230.0;
 const SIDEBAR_MIN_WIDTH: f32 = 200.0;
@@ -47,7 +49,9 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(cc: &eframe::CreationContext<'_>) -> rusqlite::Result<Self> {
+    pub fn new(
+        cc: &eframe::CreationContext<'_>,
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let conn = db::open()?;
         let settings = Settings::load(&conn)?;
         theme::apply(&cc.egui_ctx, settings.appearance());
@@ -195,17 +199,25 @@ impl eframe::App for App {
                 .show(ui, |ui| self.sidebar(ui));
         }
 
-        let top = if self.sidebar_visible { 22 } else { 22 + TRAFFIC_LIGHT_INSET as i8 };
+        // Without the sidebar the traffic lights sit over the page, so make room for them.
+        let top = if self.sidebar_visible {
+            PAGE_TOP_MARGIN
+        } else {
+            PAGE_TOP_MARGIN + TRAFFIC_LIGHT_INSET
+        };
         CentralPanel::default()
             .frame(
                 Frame::new().fill(p.bg).inner_margin(Margin {
                     left: 28,
                     right: 28,
-                    top,
+                    top: 0,
                     bottom: 22,
                 }),
             )
-            .show(ui, |ui| self.main_panel(ui));
+            .show(ui, |ui| {
+                ui.add_space(top);
+                self.main_panel(ui);
+            });
 
         if let Some(outcome) = self.edit_task.show(&ui.ctx().clone(), &self.conn) {
             self.handle(outcome);
