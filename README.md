@@ -34,6 +34,14 @@ A small, modern-looking desktop task manager written in Rust with [egui](https:/
 
 In the Edit dialog, Enter in the title field saves and Esc cancels.
 
+## Download (macOS)
+
+Grab `Tickoff-<version>-macos-arm64.zip` from the [latest release](https://github.com/fiqriismail/tickoff/releases/latest) (Apple Silicon), unzip it and drag `Tickoff.app` to Applications.
+
+The app is not signed with an Apple Developer ID, so macOS blocks it the first time. Right-click `Tickoff.app`, choose **Open**, then confirm. Or run `xattr -cr /Applications/Tickoff.app` once in Terminal.
+
+For Intel Macs, Windows and Linux, build from source as described below.
+
 ## Requirements
 
 - **Rust 1.85 or newer** (the project uses the 2024 edition). Install it with [rustup](https://rustup.rs).
@@ -143,6 +151,7 @@ Main dependencies: [`eframe`](https://crates.io/crates/eframe) / egui for the UI
 cargo fmt                    # format
 cargo clippy --all-targets   # lint
 cargo test                   # unit tests (in-memory SQLite, no setup needed)
+packaging/macos/bundle.sh    # macOS only: build dist/Tickoff.app and a release zip
 ```
 
 ## License
