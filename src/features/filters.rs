@@ -1,11 +1,12 @@
 //! Feature: the sidebar — status filters, progress summary and "Clear completed".
 
 use eframe::egui::{self, Align, CornerRadius, Layout, RichText, Sense, vec2};
-use rusqlite::{Connection, Result};
+use rusqlite::Connection;
 
 use crate::shared::icons::{self, Icon};
 use crate::shared::outcome::Outcome;
 use crate::shared::task::{Status, Task};
+use crate::shared::tasks;
 use crate::shared::theme;
 use crate::shared::widgets::{caption, nav_row};
 
@@ -108,7 +109,7 @@ impl Filters {
 
         ui.with_layout(Layout::bottom_up(Align::Min), |ui| {
             if done > 0 && ui.button("Clear completed").clicked() {
-                output.outcome = Some(clear_completed(conn).into());
+                output.outcome = Some(tasks::clear_completed(conn).into());
             }
         });
 
@@ -124,17 +125,9 @@ pub struct Output {
     pub row_clicked: bool,
 }
 
-fn clear_completed(conn: &Connection) -> Result<usize> {
-    conn.execute(
-        "DELETE FROM tasks WHERE status = ?1",
-        [Status::Done.to_db()],
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::shared::db;
     use crate::shared::task::Priority;
 
     fn task(status: Status) -> Task {
@@ -153,20 +146,5 @@ mod tests {
         assert!(Filter::All.matches(&task(Status::Done)));
         assert!(Filter::Status(Status::Done).matches(&task(Status::Done)));
         assert!(!Filter::Status(Status::Done).matches(&task(Status::Todo)));
-    }
-
-    #[test]
-    fn clear_completed_only_removes_done_tasks() {
-        let conn = db::open_in_memory().unwrap();
-        conn.execute_batch(
-            "INSERT INTO tasks (title, status) VALUES ('a', 0), ('b', 1), ('c', 2), ('d', 2);",
-        )
-        .unwrap();
-
-        assert_eq!(clear_completed(&conn).unwrap(), 2);
-        let left: i64 = conn
-            .query_row("SELECT COUNT(*) FROM tasks", [], |r| r.get(0))
-            .unwrap();
-        assert_eq!(left, 2);
     }
 }

@@ -15,6 +15,7 @@ use crate::features::task_list::{self, TaskList};
 use crate::menu::{self, Command};
 use crate::shared::outcome::Outcome;
 use crate::shared::task::Task;
+use crate::shared::tasks;
 use crate::shared::{db, theme};
 
 /// Height of the invisible strip along the top edge that drags the window.
@@ -70,7 +71,7 @@ impl App {
     }
 
     fn reload(&mut self) {
-        match task_list::load_all(&self.conn) {
+        match tasks::load_all(&self.conn) {
             Ok(tasks) => self.tasks = tasks,
             Err(e) => self.error = Some(e.to_string()),
         }

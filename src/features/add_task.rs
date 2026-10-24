@@ -1,10 +1,11 @@
 //! Feature: the quick-add bar above the task list.
 
 use eframe::egui::{self, Align, Key, Layout, Margin, TextEdit};
-use rusqlite::{Connection, Result, params};
+use rusqlite::Connection;
 
 use crate::shared::outcome::Outcome;
 use crate::shared::task::Priority;
+use crate::shared::tasks;
 use crate::shared::widgets::primary_button;
 
 /// Matches the height of the title field so the picker and button line up with it.
@@ -63,7 +64,7 @@ impl AddTask {
                 if add_clicked || submitted {
                     let title = self.title.trim();
                     if !title.is_empty() {
-                        let result = insert(conn, title, self.priority);
+                        let result = tasks::insert(conn, title, self.priority);
                         if result.is_ok() {
                             self.title.clear();
                         }
@@ -75,36 +76,5 @@ impl AddTask {
         });
 
         outcome
-    }
-}
-
-fn insert(conn: &Connection, title: &str, priority: Priority) -> Result<i64> {
-    conn.execute(
-        "INSERT INTO tasks (title, priority) VALUES (?1, ?2)",
-        params![title, priority.to_db()],
-    )?;
-    Ok(conn.last_insert_rowid())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::shared::db;
-
-    #[test]
-    fn insert_creates_a_todo_task_with_the_given_priority() {
-        let conn = db::open_in_memory().unwrap();
-        let id = insert(&conn, "Write tests", Priority::High).unwrap();
-
-        let (title, priority, status): (String, i64, i64) = conn
-            .query_row(
-                "SELECT title, priority, status FROM tasks WHERE id = ?1",
-                [id],
-                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
-            )
-            .unwrap();
-        assert_eq!(title, "Write tests");
-        assert_eq!(priority, Priority::High.to_db());
-        assert_eq!(status, 0);
     }
 }

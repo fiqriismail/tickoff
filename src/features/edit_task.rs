@@ -4,10 +4,11 @@ use chrono::{Days, Local, NaiveDate};
 use eframe::egui::{
     self, Align, CornerRadius, Frame, Id, Key, Layout, Margin, Modal, RichText, Stroke, TextEdit,
 };
-use rusqlite::{Connection, Result, params};
+use rusqlite::Connection;
 
 use crate::shared::outcome::Outcome;
 use crate::shared::task::{DATE_FORMAT, Priority, Status, Task};
+use crate::shared::tasks;
 use crate::shared::theme;
 use crate::shared::widgets::{caption, primary_button};
 
@@ -157,7 +158,7 @@ impl EditTask {
 
         if save {
             match validate(draft.task.clone()) {
-                Ok(task) => match update(conn, &task) {
+                Ok(task) => match tasks::update(conn, &task) {
                     Ok(_) => {
                         self.draft = None;
                         return Some(Outcome::Changed);
@@ -190,25 +191,9 @@ fn validate(mut task: Task) -> std::result::Result<Task, &'static str> {
     Ok(task)
 }
 
-fn update(conn: &Connection, task: &Task) -> Result<usize> {
-    conn.execute(
-        "UPDATE tasks SET title = ?1, notes = ?2, priority = ?3, status = ?4, due = ?5
-         WHERE id = ?6",
-        params![
-            task.title,
-            task.notes,
-            task.priority.to_db(),
-            task.status.to_db(),
-            task.due,
-            task.id
-        ],
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::shared::db;
 
     fn task(title: &str, due: &str) -> Task {
         Task {
@@ -238,34 +223,5 @@ mod tests {
     fn validate_rejects_blank_titles_and_bad_dates() {
         assert!(validate(task("   ", "")).is_err());
         assert!(validate(task("Bad date", "31/12/2026")).is_err());
-    }
-
-    #[test]
-    fn update_persists_every_field() {
-        let conn = db::open_in_memory().unwrap();
-        conn.execute("INSERT INTO tasks (title) VALUES ('old')", [])
-            .unwrap();
-
-        let edited = Task {
-            id: conn.last_insert_rowid(),
-            title: "new".into(),
-            notes: "details".into(),
-            priority: Priority::High,
-            status: Status::InProgress,
-            due: "2026-12-01".into(),
-        };
-        assert_eq!(update(&conn, &edited).unwrap(), 1);
-
-        let (title, notes, priority, status, due): (String, String, i64, i64, String) = conn
-            .query_row(
-                "SELECT title, notes, priority, status, due FROM tasks WHERE id = ?1",
-                [edited.id],
-                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)),
-            )
-            .unwrap();
-        assert_eq!(
-            (title.as_str(), notes.as_str(), priority, status, due.as_str()),
-            ("new", "details", Priority::High.to_db(), Status::InProgress.to_db(), "2026-12-01")
-        );
     }
 }

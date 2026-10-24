@@ -2,7 +2,6 @@
 //! everything that happens *from* a card (toggle status, delete, request edit).
 
 mod card;
-mod store;
 
 use chrono::Local;
 use eframe::egui::{
@@ -14,11 +13,10 @@ use rusqlite::Connection;
 use crate::shared::icons::{self, Icon};
 use crate::shared::outcome::Outcome;
 use crate::shared::task::Task;
+use crate::shared::tasks;
 use crate::shared::theme;
 
 use card::Action;
-
-pub use store::load_all;
 
 /// What the list asks the shell to do.
 pub enum Event {
@@ -160,9 +158,9 @@ impl TaskList {
         match action? {
             Action::Edit(task) => Some(Event::Edit(task)),
             Action::SetStatus(id, status) => {
-                Some(Event::Outcome(store::set_status(conn, id, status).into()))
+                Some(Event::Outcome(tasks::set_status(conn, id, status).into()))
             }
-            Action::Delete(id) => Some(Event::Outcome(store::delete(conn, id).into())),
+            Action::Delete(id) => Some(Event::Outcome(tasks::delete(conn, id).into())),
         }
     }
 }

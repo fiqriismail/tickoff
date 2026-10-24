@@ -7,5 +7,6 @@ pub mod db;
 pub mod icons;
 pub mod outcome;
 pub mod task;
+pub mod tasks;
 pub mod theme;
 pub mod widgets;
