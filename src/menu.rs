@@ -17,7 +17,9 @@ mod imp {
 
     use eframe::egui;
     use muda::accelerator::{Accelerator, Code, Modifiers};
-    use muda::{Menu as NativeMenu, MenuEvent, MenuId, MenuItem, PredefinedMenuItem, Submenu};
+    use muda::{
+        AboutMetadata, Menu as NativeMenu, MenuEvent, MenuId, MenuItem, PredefinedMenuItem, Submenu,
+    };
 
     use super::Command;
 
@@ -32,6 +34,19 @@ mod imp {
         MenuItem::new(label, true, Some(Accelerator::new(modifiers, code)))
     }
 
+    /// A bare cargo binary has no `Info.plist`, so the About panel needs these spelled out.
+    fn about_metadata() -> AboutMetadata {
+        AboutMetadata {
+            name: Some("Tickoff".into()),
+            version: Some(env!("CARGO_PKG_VERSION").into()),
+            comments: Some("A small task manager built with Rust and egui.".into()),
+            copyright: Some("Copyright © 2026 Fiqri Ismail".into()),
+            credits: Some("Built with Claude Code.".into()),
+            license: Some("MIT".into()),
+            ..Default::default()
+        }
+    }
+
     fn build(
         new_task: &MenuItem,
         find: &MenuItem,
@@ -42,7 +57,7 @@ mod imp {
             "Tickoff",
             true,
             &[
-                &PredefinedMenuItem::about(Some("About Tickoff"), None),
+                &PredefinedMenuItem::about(Some("About Tickoff"), Some(about_metadata())),
                 &PredefinedMenuItem::separator(),
                 settings,
                 &PredefinedMenuItem::separator(),
