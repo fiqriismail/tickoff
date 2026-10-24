@@ -37,7 +37,7 @@ In the Edit dialog, Enter in the title field saves and Esc cancels.
 First get the code:
 
 ```sh
-git clone <your-repository-url> tickoff
+git clone https://github.com/fiqriismail/tickoff.git tickoff
 cd tickoff
 ```
 
