@@ -4,6 +4,67 @@ use rusqlite::{Connection, Result, Row, params};
 
 use super::task::{Priority, Status, Task};
 
+/// The loaded tasks plus everything derived from them, computed once per load
+/// instead of once per frame.
+pub struct TaskSet {
+    items: Vec<Task>,
+    /// Lower-cased title and notes of each task, for case-insensitive search.
+    search_keys: Vec<String>,
+    counts: [usize; 3],
+    revision: u64,
+}
+
+impl TaskSet {
+    pub fn new() -> Self {
+        Self {
+            items: Vec::new(),
+            search_keys: Vec::new(),
+            counts: [0; 3],
+            revision: 0,
+        }
+    }
+
+    /// Swaps in freshly loaded tasks and bumps [`TaskSet::revision`].
+    pub fn replace(&mut self, items: Vec<Task>) {
+        self.search_keys = items
+            .iter()
+            .map(|t| format!("{}\n{}", t.title, t.notes).to_lowercase())
+            .collect();
+        self.counts = [0; 3];
+        for task in &items {
+            self.counts[task.status.to_db() as usize] += 1;
+        }
+        self.items = items;
+        self.revision += 1;
+    }
+
+    pub fn items(&self) -> &[Task] {
+        &self.items
+    }
+
+    pub fn len(&self) -> usize {
+        self.items.len()
+    }
+
+    /// Changes every time the contents are replaced; caches key on it.
+    pub fn revision(&self) -> u64 {
+        self.revision
+    }
+
+    /// Number of tasks with `status`, or of all tasks when it is `None`.
+    pub fn count(&self, status: Option<Status>) -> usize {
+        match status {
+            Some(s) => self.counts[s.to_db() as usize],
+            None => self.items.len(),
+        }
+    }
+
+    /// Whether task `index` contains `query`, which must already be lower-case.
+    pub fn matches(&self, index: usize, query: &str) -> bool {
+        query.is_empty() || self.search_keys[index].contains(query)
+    }
+}
+
 /// Open tasks first, then by priority, then by due date (undated last), newest first.
 pub fn load_all(conn: &Connection) -> Result<Vec<Task>> {
     let mut stmt = conn.prepare(
@@ -69,6 +130,30 @@ fn row_to_task(row: &Row) -> Result<Task> {
 mod tests {
     use super::*;
     use crate::shared::db;
+
+    #[test]
+    fn task_set_counts_and_searches_without_rescanning() {
+        let mut set = TaskSet::new();
+        let make = |title: &str, status| Task {
+            id: 1,
+            title: title.into(),
+            notes: "Milk".into(),
+            priority: Priority::Medium,
+            status,
+            due: String::new(),
+        };
+        set.replace(vec![make("Buy Eggs", Status::Todo), make("Call", Status::Done)]);
+
+        assert_eq!(set.count(None), 2);
+        assert_eq!(set.count(Some(Status::Done)), 1);
+        assert_eq!(set.count(Some(Status::InProgress)), 0);
+        assert!(set.matches(0, "eggs") && set.matches(0, "milk") && set.matches(0, ""));
+        assert!(!set.matches(1, "eggs"));
+
+        let before = set.revision();
+        set.replace(Vec::new());
+        assert!(set.revision() > before);
+    }
 
     #[test]
     fn load_all_orders_open_high_priority_dated_tasks_first() {

@@ -14,8 +14,7 @@ use crate::features::settings::Settings;
 use crate::features::task_list::{self, TaskList};
 use crate::menu::{self, Command};
 use crate::shared::outcome::Outcome;
-use crate::shared::task::Task;
-use crate::shared::tasks;
+use crate::shared::tasks::{self, TaskSet};
 use crate::shared::{db, theme};
 
 /// Height of the invisible strip along the top edge that drags the window.
@@ -35,7 +34,7 @@ enum View {
 
 pub struct App {
     conn: Connection,
-    tasks: Vec<Task>,
+    tasks: TaskSet,
     error: Option<String>,
     view: View,
     filters: Filters,
@@ -55,7 +54,7 @@ impl App {
 
         let mut app = Self {
             conn,
-            tasks: Vec::new(),
+            tasks: TaskSet::new(),
             error: None,
             view: View::Tasks,
             filters: Filters::new(),
@@ -72,17 +71,23 @@ impl App {
 
     fn reload(&mut self) {
         match tasks::load_all(&self.conn) {
-            Ok(tasks) => self.tasks = tasks,
+            Ok(tasks) => self.tasks.replace(tasks),
             Err(e) => self.error = Some(e.to_string()),
         }
     }
 
+    /// Records the outcome of a task change and reloads the tasks.
     fn handle(&mut self, outcome: Outcome) {
+        self.report(outcome);
+        self.reload();
+    }
+
+    /// Records an outcome that did not touch the tasks table, so no reload is needed.
+    fn report(&mut self, outcome: Outcome) {
         self.error = match outcome {
             Outcome::Changed => None,
             Outcome::Failed(message) => Some(message),
         };
-        self.reload();
     }
 
     fn run(&mut self, command: Command) {
@@ -149,7 +154,7 @@ impl App {
 
         let event = self
             .task_list
-            .show(ui, &self.conn, &self.tasks, |t| filter.matches(t));
+            .show(ui, &self.conn, &self.tasks, filter.status());
         match event {
             Some(task_list::Event::Edit(task)) => self.edit_task.open(task),
             Some(task_list::Event::Outcome(outcome)) => self.handle(outcome),
@@ -160,7 +165,7 @@ impl App {
     fn settings_page(&mut self, ui: &mut egui::Ui) {
         self.error_banner(ui);
         if let Some(outcome) = self.settings.show(ui, &self.conn) {
-            self.handle(outcome);
+            self.report(outcome);
         }
     }
 

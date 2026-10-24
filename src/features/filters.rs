@@ -5,8 +5,8 @@ use rusqlite::Connection;
 
 use crate::shared::icons::{self, Icon};
 use crate::shared::outcome::Outcome;
-use crate::shared::task::{Status, Task};
-use crate::shared::tasks;
+use crate::shared::task::Status;
+use crate::shared::tasks::{self, TaskSet};
 use crate::shared::theme;
 use crate::shared::widgets::{caption, nav_row};
 
@@ -40,10 +40,11 @@ impl Filter {
         }
     }
 
-    pub fn matches(self, task: &Task) -> bool {
+    /// The status this filter selects, or `None` for all tasks.
+    pub fn status(self) -> Option<Status> {
         match self {
-            Filter::All => true,
-            Filter::Status(s) => task.status == s,
+            Filter::All => None,
+            Filter::Status(s) => Some(s),
         }
     }
 }
@@ -69,7 +70,7 @@ impl Filters {
         &mut self,
         ui: &mut egui::Ui,
         conn: &Connection,
-        tasks: &[Task],
+        tasks: &TaskSet,
         active: bool,
     ) -> Output {
         let p = theme::palette(ui.ctx());
@@ -86,7 +87,7 @@ impl Filters {
 
         caption(ui, "LIBRARY");
         for filter in Filter::OPTIONS {
-            let count = tasks.iter().filter(|t| filter.matches(t)).count();
+            let count = tasks.count(filter.status());
             let selected = active && self.selected == filter;
             if nav_row(ui, filter.icon(), filter.label(), &count.to_string(), selected).clicked() {
                 self.selected = filter;
@@ -95,8 +96,8 @@ impl Filters {
         }
 
         ui.add_space(18.0);
-        let total = tasks.len();
-        let done = tasks.iter().filter(|t| t.is_done()).count();
+        let total = tasks.count(None);
+        let done = tasks.count(Some(Status::Done));
         let fraction = if total == 0 { 0.0 } else { done as f32 / total as f32 };
         caption(ui, "PROGRESS");
         ui.add(
@@ -128,23 +129,10 @@ pub struct Output {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::shared::task::Priority;
-
-    fn task(status: Status) -> Task {
-        Task {
-            id: 1,
-            title: "t".into(),
-            notes: String::new(),
-            priority: Priority::Medium,
-            status,
-            due: String::new(),
-        }
-    }
 
     #[test]
-    fn filter_matches_by_status() {
-        assert!(Filter::All.matches(&task(Status::Done)));
-        assert!(Filter::Status(Status::Done).matches(&task(Status::Done)));
-        assert!(!Filter::Status(Status::Done).matches(&task(Status::Todo)));
+    fn filter_status_matches_its_option() {
+        assert_eq!(Filter::All.status(), None);
+        assert_eq!(Filter::Status(Status::Done).status(), Some(Status::Done));
     }
 }

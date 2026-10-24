@@ -5,7 +5,7 @@ use eframe::egui::{
 };
 
 use crate::shared::task::{Priority, Status, Task};
-use crate::shared::theme::{self, Palette};
+use crate::shared::theme::{Appearance, Palette};
 
 pub enum Action {
     SetStatus(i64, Status),
@@ -16,9 +16,13 @@ pub enum Action {
 /// Width kept free on the right of a card for the Edit and Delete buttons.
 const BUTTONS_WIDTH: f32 = 130.0;
 
-pub fn show(ui: &mut egui::Ui, task: &Task, today: NaiveDate) -> Option<Action> {
-    let p = theme::palette(ui.ctx());
-    let look = theme::appearance(ui.ctx());
+pub fn show(
+    ui: &mut egui::Ui,
+    p: Palette,
+    look: Appearance,
+    task: &Task,
+    today: NaiveDate,
+) -> Option<Action> {
     let compact = look.compact_cards;
     let mut action = None;
     let done = task.is_done();

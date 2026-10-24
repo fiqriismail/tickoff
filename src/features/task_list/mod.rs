@@ -3,18 +3,20 @@
 
 mod card;
 
+use std::collections::HashMap;
+
 use chrono::Local;
 use eframe::egui::{
     self, Align, CornerRadius, CursorIcon, Frame, Id, Key, Layout, Margin, RichText, Sense, Stroke,
-    TextEdit, vec2,
+    TextEdit, UiBuilder, vec2,
 };
 use rusqlite::Connection;
 
 use crate::shared::icons::{self, Icon};
 use crate::shared::outcome::Outcome;
-use crate::shared::task::Task;
-use crate::shared::tasks;
-use crate::shared::theme;
+use crate::shared::task::{Status, Task};
+use crate::shared::tasks::{self, TaskSet};
+use crate::shared::theme::{self, Palette};
 
 use card::Action;
 
@@ -25,9 +27,18 @@ pub enum Event {
     Outcome(Outcome),
 }
 
+/// Row positions are estimated until a card has been drawn once.
+const ESTIMATED_CARD_HEIGHT: f32 = 100.0;
+
 pub struct TaskList {
     search: String,
     focus_search: bool,
+    /// Indices into the task set that pass the filter and the search, in display order.
+    view: Vec<usize>,
+    view_key: Option<(u64, Option<Status>, String)>,
+    /// Measured card heights by task id; cards are only drawn while on screen.
+    heights: HashMap<i64, f32>,
+    heights_look: (bool, bool),
 }
 
 impl TaskList {
@@ -35,6 +46,10 @@ impl TaskList {
         Self {
             search: String::new(),
             focus_search: false,
+            view: Vec::new(),
+            view_key: None,
+            heights: HashMap::new(),
+            heights_look: (false, false),
         }
     }
 
@@ -107,52 +122,89 @@ impl TaskList {
             });
     }
 
-    /// Shows the cards for every task in `tasks` that passes `visible` and the search box.
+    /// Shows a card for each task in `tasks` with the given status (all when
+    /// `None`) that matches the search box. Only the cards in view are drawn.
     pub fn show(
         &mut self,
         ui: &mut egui::Ui,
         conn: &Connection,
-        tasks: &[Task],
-        visible: impl Fn(&Task) -> bool,
+        tasks: &TaskSet,
+        status: Option<Status>,
     ) -> Option<Event> {
-        let query = self.search.trim().to_lowercase();
+        self.refresh_view(tasks, status);
+        let p = theme::palette(ui.ctx());
+        let look = theme::appearance(ui.ctx());
         let today = Local::now().date_naive();
         let mut action = None;
-        let mut shown = 0;
+
+        if self.view.is_empty() {
+            self.show_empty_state(ui, p, tasks.len());
+            return None;
+        }
+
+        let look_key = (look.compact_cards, look.show_notes);
+        if self.heights_look != look_key {
+            self.heights.clear();
+            self.heights_look = look_key;
+        }
+        if self.heights.len() > tasks.len() * 2 {
+            self.heights.clear();
+        }
 
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
-            .show(ui, |ui| {
-                let compact = theme::appearance(ui.ctx()).compact_cards;
-                ui.spacing_mut().item_spacing.y = if compact { 8.0 } else { 14.0 };
-                for task in tasks
-                    .iter()
-                    .filter(|t| visible(t) && matches_query(t, &query))
-                {
-                    shown += 1;
-                    if let Some(a) = card::show(ui, task, today) {
-                        action = Some(a);
+            .show_viewport(ui, |ui, viewport| {
+                let gap = if look.compact_cards { 8.0 } else { 14.0 };
+                ui.spacing_mut().item_spacing.y = gap;
+
+                let estimate = if self.heights.is_empty() {
+                    ESTIMATED_CARD_HEIGHT
+                } else {
+                    self.heights.values().sum::<f32>() / self.heights.len() as f32
+                };
+
+                let rows = self.view.len();
+                let (mut first, mut end) = (rows, rows);
+                let (mut first_y, mut end_y, mut y) = (0.0_f32, 0.0_f32, 0.0_f32);
+                let mut last_row_height = 0.0;
+                for (row, &index) in self.view.iter().enumerate() {
+                    let h = self.heights.get(&tasks.items()[index].id).copied().unwrap_or(estimate) + gap;
+                    if first == rows && y + h > viewport.min.y {
+                        first = row;
+                        first_y = y;
                     }
+                    if first != rows && end == rows && y > viewport.max.y {
+                        end = row;
+                        end_y = y;
+                    }
+                    last_row_height = h;
+                    y += h;
+                }
+                if first == rows {
+                    first = rows - 1;
+                    first_y = y - last_row_height;
+                }
+                if end == rows {
+                    end_y = y;
                 }
 
-                if shown == 0 {
-                    ui.add_space(60.0);
-                    ui.vertical_centered(|ui| {
-                        let muted = theme::palette(ui.ctx()).muted;
-                        if !query.is_empty() {
-                            ui.label(RichText::new(format!("No results for “{}”", self.search.trim())).size(16.0).strong());
-                            ui.label(RichText::new("Check the spelling or try a different search.").color(muted));
-                        } else {
-                            ui.label(RichText::new("🎉").size(40.0));
-                            let message = if tasks.is_empty() {
-                                "No tasks yet — add your first one above."
-                            } else {
-                                "Nothing here yet."
-                            };
-                            ui.label(RichText::new(message).color(muted));
+                ui.set_height((y - gap).max(0.0));
+                let top = ui.max_rect().top() + first_y;
+                let rect = egui::Rect::from_x_y_ranges(
+                    ui.max_rect().x_range(),
+                    top..=(ui.max_rect().top() + end_y),
+                );
+                ui.scope_builder(UiBuilder::new().max_rect(rect), |ui| {
+                    ui.spacing_mut().item_spacing.y = gap;
+                    for &index in &self.view[first..end] {
+                        let task = &tasks.items()[index];
+                        let drawn = ui.push_id(task.id, |ui| card::show(ui, p, look, task, today));
+                        self.heights.insert(task.id, drawn.response.rect.height());
+                        if let Some(a) = drawn.inner {
+                            action = Some(a);
                         }
-                    });
-                }
+                    }
+                });
             });
 
         match action? {
@@ -163,36 +215,43 @@ impl TaskList {
             Action::Delete(id) => Some(Event::Outcome(tasks::delete(conn, id).into())),
         }
     }
-}
 
-fn matches_query(task: &Task, query: &str) -> bool {
-    query.is_empty()
-        || task.title.to_lowercase().contains(query)
-        || task.notes.to_lowercase().contains(query)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::shared::task::{Priority, Status};
-
-    fn task(title: &str, notes: &str) -> Task {
-        Task {
-            id: 1,
-            title: title.into(),
-            notes: notes.into(),
-            priority: Priority::Medium,
-            status: Status::Todo,
-            due: String::new(),
+    /// Recomputes which tasks are listed, but only when the data, filter or search changed.
+    fn refresh_view(&mut self, tasks: &TaskSet, status: Option<Status>) {
+        let query = self.search.trim().to_lowercase();
+        let key = (tasks.revision(), status, query);
+        if self.view_key.as_ref() == Some(&key) {
+            return;
         }
+        self.view = tasks
+            .items()
+            .iter()
+            .enumerate()
+            .filter(|(i, t)| status.is_none_or(|s| t.status == s) && tasks.matches(*i, &key.2))
+            .map(|(i, _)| i)
+            .collect();
+        self.view_key = Some(key);
     }
 
-    #[test]
-    fn search_matches_title_or_notes_case_insensitively() {
-        let t = task("Buy Groceries", "milk and eggs");
-        assert!(matches_query(&t, ""));
-        assert!(matches_query(&t, "grocer"));
-        assert!(matches_query(&t, "eggs"));
-        assert!(!matches_query(&t, "invoice"));
+    fn show_empty_state(&self, ui: &mut egui::Ui, p: Palette, total: usize) {
+        ui.add_space(60.0);
+        ui.vertical_centered(|ui| {
+            if !self.search.trim().is_empty() {
+                ui.label(
+                    RichText::new(format!("No results for “{}”", self.search.trim()))
+                        .size(16.0)
+                        .strong(),
+                );
+                ui.label(RichText::new("Check the spelling or try a different search.").color(p.muted));
+            } else {
+                ui.label(RichText::new("🎉").size(40.0));
+                let message = if total == 0 {
+                    "No tasks yet — add your first one above."
+                } else {
+                    "Nothing here yet."
+                };
+                ui.label(RichText::new(message).color(p.muted));
+            }
+        });
     }
 }
