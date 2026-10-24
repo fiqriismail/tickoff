@@ -157,10 +157,13 @@ impl EditTask {
 
         if save {
             match validate(draft.task.clone()) {
-                Ok(task) => {
-                    self.draft = None;
-                    return Some(update(conn, &task).into());
-                }
+                Ok(task) => match update(conn, &task) {
+                    Ok(_) => {
+                        self.draft = None;
+                        return Some(Outcome::Changed);
+                    }
+                    Err(e) => draft.error = Some(format!("Could not save: {e}")),
+                },
                 Err(message) => draft.error = Some(message.to_owned()),
             }
         } else if cancel {
@@ -178,8 +181,11 @@ fn validate(mut task: Task) -> std::result::Result<Task, &'static str> {
     if task.title.is_empty() {
         return Err("A task needs a title.");
     }
-    if !task.due.is_empty() && NaiveDate::parse_from_str(&task.due, DATE_FORMAT).is_err() {
-        return Err("Due date must look like 2026-12-31.");
+    if !task.due.is_empty() {
+        let date = NaiveDate::parse_from_str(&task.due, DATE_FORMAT)
+            .map_err(|_| "Due date must look like 2026-12-31.")?;
+        // The list sorts `due` as text, so only the zero-padded form may be stored.
+        task.due = date.format(DATE_FORMAT).to_string();
     }
     Ok(task)
 }
@@ -221,6 +227,11 @@ mod tests {
         assert_eq!(ok.title, "Ship it");
         assert_eq!(ok.due, "2026-12-31");
         assert!(validate(task("No date", "")).is_ok());
+    }
+
+    #[test]
+    fn validate_stores_dates_in_canonical_form() {
+        assert_eq!(validate(task("Pad", "2026-1-5")).unwrap().due, "2026-01-05");
     }
 
     #[test]

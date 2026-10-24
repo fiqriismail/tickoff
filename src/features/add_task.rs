@@ -63,8 +63,11 @@ impl AddTask {
                 if add_clicked || submitted {
                     let title = self.title.trim();
                     if !title.is_empty() {
-                        outcome = Some(insert(conn, title, self.priority).into());
-                        self.title.clear();
+                        let result = insert(conn, title, self.priority);
+                        if result.is_ok() {
+                            self.title.clear();
+                        }
+                        outcome = Some(result.into());
                     }
                     response.request_focus();
                 }
