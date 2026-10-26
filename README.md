@@ -8,8 +8,8 @@ A small, modern-looking desktop task manager written in Rust with [egui](https:/
 
 | Light | Dark |
 |---|---|
-| ![Task list in light mode](docs/screenshots/tasks-light.png) | ![Task list in dark mode with the violet accent](docs/screenshots/tasks-dark.png) |
-| ![Settings page](docs/screenshots/settings.png) | ![Edit task dialog](docs/screenshots/edit-task.png) |
+| ![Task list in light mode](brain/docs/screenshots/tasks-light.png) | ![Task list in dark mode with the violet accent](brain/docs/screenshots/tasks-dark.png) |
+| ![Settings page](brain/docs/screenshots/settings.png) | ![Edit task dialog](brain/docs/screenshots/edit-task.png) |
 
 ## Features
 
