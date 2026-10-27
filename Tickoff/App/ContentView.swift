@@ -6,6 +6,9 @@ struct ContentView: View {
     let model: AppModel
     @State private var filter: Filter = .all
     @State private var editing: Task?
+    /// Bumped by menu commands; the features focus their field when it changes.
+    @State private var newTaskRequest = 0
+    @State private var findRequest = 0
 
     var body: some View {
         NavigationSplitView {
@@ -18,8 +21,12 @@ struct ContentView: View {
             TaskListView(
                 tasks: model.tasks, filter: filter, appearance: model.settings.appearance,
                 store: model.taskStore, report: model.handle,
+                searchRequest: findRequest,
                 edit: { editing = $0 },
-                accessory: { AddTaskBar(store: model.taskStore, report: model.handle) }
+                accessory: {
+                    AddTaskBar(
+                        store: model.taskStore, report: model.handle, focusRequest: newTaskRequest)
+                }
             )
                 .safeAreaInset(edge: .top, spacing: 0) {
                     if let message = model.errorMessage {
@@ -30,6 +37,10 @@ struct ContentView: View {
         .sheet(item: $editing) { task in
             EditTaskView(task: task, store: model.taskStore, finish: model.handle)
         }
+        .focusedSceneValue(
+            \.appActions,
+            AppActions(newTask: { newTaskRequest += 1 }, find: { findRequest += 1 })
+        )
         .frame(minWidth: 720, minHeight: 480)
     }
 }
