@@ -30,7 +30,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Features/.gitkeep,
-				Shared/.gitkeep,
 			);
 			target = A10000000000000000000010 /* Tickoff */;
 		};
