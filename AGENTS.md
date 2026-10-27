@@ -5,6 +5,28 @@ and a local SQLite database (rusqlite, bundled). This file is the contract for a
 agent working in this repository: follow the architecture below, and when in doubt, copy
 the patterns already in the code rather than inventing new ones.
 
+## Native Swift port (priority 1)
+
+Tickoff is being rewritten as a native SwiftUI app. This is the top priority, tracked by the
+GitHub milestone **Native Swift port** (epic #11, issues #12–#20, label `priority: 1`).
+The Projects milestone (#1–#10, `priority: 2`) is deferred and will be built on the
+Swift code. The full plan is in `brain/docs/swift-port.md`.
+
+- **Stack:** Swift + SwiftUI, minimum macOS 14 Sonoma, GRDB (Swift Package Manager) for
+  SQLite, Swift Testing for tests. macOS only; Windows and Linux are dropped.
+- **Replace in place:** #12 tags the last Rust commit, deletes the crate and adds
+  `Tickoff.xcodeproj` at the repo root. Until #12 is merged, the Rust sections below
+  describe the code; afterwards, Swift rules apply and #20 rewrites this file.
+- **Same data:** the Swift app opens the existing `~/.hello_gui/tasks.db` unchanged: the
+  same `tasks` and `settings` tables, the same integer codes for status and priority, and
+  the same settings keys. Never change the schema in a way the Rust-era file can't open.
+- **Same guard rails:** features never import each other, the shell (`App/AppModel`) only
+  routes, `Shared/` stays small, one type owns each table's SQL (`TaskStore`,
+  `SettingsStore`), only parameterised SQL, additive migrations (GRDB `DatabaseMigrator`),
+  and no `try!` or force-unwraps on runtime failures.
+- **Don't start new Rust features.** Fix only bugs that block using the app until the port
+  lands.
+
 ## Commands
 
 ```sh
@@ -38,6 +60,9 @@ After finishing every task, write a small summary to `brain/daily-notes/dd-mm-yy
 - Create `brain/daily-notes/` if it is missing.
 
 ## Architecture
+
+This describes the current Rust code. The Swift app keeps the same three layers and rules,
+mapped to `App/`, `Features/` and `Shared/` (see `brain/docs/swift-port.md`).
 
 The app is split into three layers with strict dependency rules:
 
