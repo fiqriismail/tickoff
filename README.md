@@ -2,14 +2,16 @@
 
 A small, modern-looking desktop task manager written in Rust with [egui](https://github.com/emilk/egui) (via `eframe`) and SQLite. It started as a learning project: a place to try egui, a vertical-slice code layout, and macOS-style UI polish.
 
+> **Moving to native Swift.** Tickoff is being rewritten as a native SwiftUI app for macOS 14 and later, and that is the current top priority. Your tasks and settings carry over: the Swift app reads the same SQLite file. The Windows and Linux builds below will be dropped when the port lands. Progress is tracked in the [Native Swift port milestone](https://github.com/fiqriismail/tickoff/milestone/2). The last Rust version will stay available as a git tag.
+
 > **Built with Claude Code.** This project was developed with [Claude Code](https://claude.com/claude-code), Anthropic's AI coding assistant, working interactively with the author.
 
 ## Screenshots
 
 | Light | Dark |
 |---|---|
-| ![Task list in light mode](docs/screenshots/tasks-light.png) | ![Task list in dark mode with the violet accent](docs/screenshots/tasks-dark.png) |
-| ![Settings page](docs/screenshots/settings.png) | ![Edit task dialog](docs/screenshots/edit-task.png) |
+| ![Task list in light mode](brain/docs/screenshots/tasks-light.png) | ![Task list in dark mode with the violet accent](brain/docs/screenshots/tasks-dark.png) |
+| ![Settings page](brain/docs/screenshots/settings.png) | ![Edit task dialog](brain/docs/screenshots/edit-task.png) |
 
 ## Features
 
