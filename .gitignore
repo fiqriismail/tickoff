@@ -1,2 +1,11 @@
-/target
+# Xcode
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+
+# macOS
+.DS_Store
+
+# Release output
 /dist
