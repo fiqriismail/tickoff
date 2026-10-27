@@ -1,3 +1,5 @@
+import Foundation
+
 /// The loaded tasks plus everything derived from them, computed once per load instead of once
 /// per view update. The shell owns the one `TaskSet` and passes it down by value or reference.
 struct TaskSet: Sendable {
@@ -26,5 +28,16 @@ struct TaskSet: Sendable {
     /// Whether task `index` contains `query`, which must already be lower-case.
     func matches(index: Int, query: String) -> Bool {
         query.isEmpty || searchKeys[index].contains(query)
+    }
+
+    /// Tasks with `status` (all when `nil`) whose title or notes contain `query`, ignoring case
+    /// and surrounding whitespace, in load order.
+    func visible(status: Status?, query: String) -> [Task] {
+        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return items.indices.compactMap { index in
+            let task = items[index]
+            guard status == nil || task.status == status else { return nil }
+            return matches(index: index, query: needle) ? task : nil
+        }
     }
 }
