@@ -4,6 +4,8 @@ Priority 1. Tracked by the GitHub milestone **Native Swift port** (epic #11). Th
 Projects milestone (epic #1) is priority 2, deferred until the port is done, and its
 issues have been rewritten for the Swift code.
 
+**Status: complete** (#12 to #20 merged). `README.md` and `AGENTS.md` describe the final code.
+
 ## Why
 
 The app is macOS-only in practice, and about half the Rust code works around things

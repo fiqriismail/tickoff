@@ -75,14 +75,14 @@ struct TaskCard: View {
     private var meta: some View {
         HStack(spacing: 8) {
             Button { setStatus(task.status.next) } label: {
-                Pill(text: task.status.label, color: task.status.color, font: appearance.font(0.8, weight: .medium))
+                Pill(text: task.status.label, style: task.status.style, font: appearance.font(0.8, weight: .medium))
             }
             .buttonStyle(.plain)
             .help("Click to move to the next status")
             .accessibilityLabel("Status: \(task.status.label)")
             .accessibilityHint("Moves the task to \(task.status.next.label)")
 
-            Pill(text: task.priority.label, color: task.priority.color, font: appearance.font(0.8, weight: .medium))
+            Pill(text: task.priority.label, style: AnyShapeStyle(task.priority.color), font: appearance.font(0.8, weight: .medium))
 
             if let due = DueLabel(for: task) {
                 Label(due.text, systemImage: "calendar")
@@ -130,25 +130,26 @@ private struct StatusCircle: View {
 
 private struct Pill: View {
     let text: String
-    let color: Color
+    let style: AnyShapeStyle
     let font: Font
 
     var body: some View {
         Text(text)
             .font(font)
-            .foregroundStyle(color)
+            .foregroundStyle(style)
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
-            .background(color.opacity(0.14), in: Capsule())
+            .background(Capsule().fill(style).opacity(0.14))
     }
 }
 
 extension Status {
-    fileprivate var color: Color {
+    /// `.tint` (not `Color.accentColor`) so the pill follows the accent chosen in Settings.
+    fileprivate var style: AnyShapeStyle {
         switch self {
-        case .todo: .secondary
-        case .inProgress: .accentColor
-        case .done: .green
+        case .todo: AnyShapeStyle(.secondary)
+        case .inProgress: AnyShapeStyle(.tint)
+        case .done: AnyShapeStyle(Color.green)
         }
     }
 }

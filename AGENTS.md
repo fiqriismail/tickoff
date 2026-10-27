@@ -1,44 +1,28 @@
 # AGENTS.md
 
-Tickoff is a native macOS task manager built in Rust with eframe/egui (immediate-mode GUI)
-and a local SQLite database (rusqlite, bundled). This file is the contract for any coding
-agent working in this repository: follow the architecture below, and when in doubt, copy
-the patterns already in the code rather than inventing new ones.
+Tickoff is a native macOS task manager built with Swift and SwiftUI and a local SQLite
+database (GRDB). This file is the contract for any coding agent working in this repository:
+follow the architecture below, and when in doubt, copy the patterns already in the code
+rather than inventing new ones.
 
-## Native Swift port (priority 1)
-
-Tickoff is being rewritten as a native SwiftUI app. This is the top priority, tracked by the
-GitHub milestone **Native Swift port** (epic #11, issues #12–#20, label `priority: 1`).
-The Projects milestone (#1–#10, `priority: 2`) is deferred and will be built on the
-Swift code. The full plan is in `brain/docs/swift-port.md`.
-
-- **Stack:** Swift + SwiftUI, minimum macOS 14 Sonoma, GRDB (Swift Package Manager) for
-  SQLite, Swift Testing for tests. macOS only; Windows and Linux are dropped.
-- **Replace in place:** #12 tags the last Rust commit, deletes the crate and adds
-  `Tickoff.xcodeproj` at the repo root. Until #12 is merged, the Rust sections below
-  describe the code; afterwards, Swift rules apply and #20 rewrites this file.
-- **Same data:** the Swift app opens the existing `~/.hello_gui/tasks.db` unchanged: the
-  same `tasks` and `settings` tables, the same integer codes for status and priority, and
-  the same settings keys. Never change the schema in a way the Rust-era file can't open.
-- **Same guard rails:** features never import each other, the shell (`App/AppModel`) only
-  routes, `Shared/` stays small, one type owns each table's SQL (`TaskStore`,
-  `SettingsStore`), only parameterised SQL, additive migrations (GRDB `DatabaseMigrator`),
-  and no `try!` or force-unwraps on runtime failures.
-- **Don't start new Rust features.** Fix only bugs that block using the app until the port
-  lands.
+- **Stack:** Swift 6 language mode, SwiftUI, minimum macOS 14 Sonoma, Xcode 16+, GRDB (Swift
+  Package Manager) for SQLite, Swift Testing for tests. macOS only.
+- **History:** the app was rewritten from Rust/egui. The last Rust commit is tagged
+  `v0.1.0-rust`. The background and decisions are in `brain/docs/swift-port.md`.
+- **Next up:** the Projects milestone (epic #1), built on this code.
 
 ## Commands
 
 ```sh
-cargo check          # fast validation while iterating
-cargo test           # unit tests (in-memory SQLite, no app window needed)
-cargo fmt            # required before finishing any change
-cargo clippy         # keep it warning-free
-cargo run            # launch the app
-./packaging/macos/bundle.sh # build the .app bundle for releases
+xcodebuild build -project Tickoff.xcodeproj -scheme Tickoff -destination 'platform=macOS'
+xcodebuild test  -project Tickoff.xcodeproj -scheme Tickoff -destination 'platform=macOS'
+packaging/macos/release.sh   # Release archive, ad-hoc signed, dist/Tickoff-<version>-macos-universal.zip
 ```
 
-Always leave the tree with `cargo fmt` applied and `cargo test` passing.
+Open `Tickoff.xcodeproj` in Xcode for day-to-day work (⌘R run, ⌘U test). Always leave the
+tree building without warnings and with all tests passing. The Xcode project uses a
+file-system synchronized group, so new files under `Tickoff/` and `TickoffTests/` are picked
+up automatically; do not hand-edit `project.pbxproj` to add them.
 
 ## Branching
 
@@ -61,109 +45,122 @@ After finishing every task, write a small summary to `brain/daily-notes/dd-mm-yy
 
 ## Architecture
 
-This describes the current Rust code. The Swift app keeps the same three layers and rules,
-mapped to `App/`, `Features/` and `Shared/` (see `brain/docs/swift-port.md`).
-
 The app is split into three layers with strict dependency rules:
 
 ```
-src/
-  main.rs            # eframe entry point and window options only
-  app.rs             # the SHELL: owns the Connection + TaskSet, lays out panels,
-                     # routes menu Commands and feature Outcomes. No feature logic here.
-  menu.rs            # macOS menu bar (muda); emits Command values the shell runs
-  features/          # one module per feature; UI + state + SQL calls for that feature
-    add_task.rs
-    edit_task.rs
-    filters.rs
-    task_list/       # larger features become folders (mod.rs + submodules like card.rs)
-    settings/        # settings/store.rs owns SQL for the `settings` table
-  shared/            # cross-cutting building blocks used by 2+ features
-    db.rs            # opens the database and runs migrations
-    tasks.rs         # the ONE place that talks SQL about the `tasks` table, plus TaskSet
-    task.rs          # Task, Priority, Status domain types
-    outcome.rs       # Outcome: what a feature reports back to the shell
-    theme.rs         # appearance preferences, palette, egui style setup
-    icons.rs, widgets.rs
+Tickoff/
+  App/                 # the SHELL: owns the database + TaskSet, lays out the window,
+                       # routes menu commands and feature Outcomes. No feature logic here.
+    TickoffApp.swift       entry point, scenes (main window, Settings), app delegate
+    AppModel.swift         database, TaskStore, SettingsModel, TaskSet, error banner state
+    ContentView.swift      NavigationSplitView, edit sheet, menu-command routing
+    AppCommands.swift      menu bar commands (New Task, Find, About)
+    ErrorBanner.swift
+  Features/            # one folder per feature; UI + state + calls to a store
+    AddTask/  EditTask/  Filters/  Settings/  TaskList/
+  Shared/              # cross-cutting building blocks used by 2+ features
+    AppDatabase.swift      opens the database and runs migrations
+    TaskStore.swift        the ONE place that talks SQL about the `tasks` table
+    Task.swift             Task, Status, Priority domain types
+    TaskSet.swift          loaded tasks plus cached search keys and counts
+    Outcome.swift          what a feature reports back to the shell
+    Theme.swift            appearance preferences, accent colours, text scaling
+  Resources/           # asset catalog
+TickoffTests/          # Swift Testing suites, one per type under test
+packaging/macos/       # release.sh, make_icon.swift
 ```
 
 ### Dependency rules (the guard rails)
 
-1. **Features never import other features.** Each feature talks only to `shared/` and
-   receives what it needs as arguments. If two features must coordinate, the shell
-   (`app.rs`) wires them together — see how `task_list::Event::Edit(task)` is routed to
-   `edit_task.open(task)` in `app.rs`.
-2. **The shell contains no feature logic.** `app.rs` owns the `Connection` and the loaded
-   `TaskSet`, lays out the sidebar/central panels, and routes commands and outcomes.
-   Behaviour belongs in the feature that owns it.
-3. **`shared/` stays small.** Something moves there only when two or more features
+1. **Features never import each other.** Each feature talks only to `Shared/` and receives
+   what it needs as arguments. If two features must coordinate, the shell wires them
+   together, e.g. `TaskListView`'s `edit` closure sets `editing` in `ContentView`, which
+   presents `EditTaskView`. Menu commands reach features through `AppActions` (a focused
+   value) plus request counters that the feature observes with `onChange`.
+2. **The shell contains no feature logic.** `AppModel` and `ContentView` own the database
+   and the loaded `TaskSet`, lay out the sidebar and detail, and route commands and
+   outcomes. Behaviour belongs in the feature that owns it.
+3. **`Shared/` stays small.** Something moves there only when two or more features
    genuinely need it. Everything else lives inside the feature that uses it.
-4. **SQL for a table lives in exactly one module.** The `tasks` table is owned by
-   `shared/tasks.rs`; the `settings` table by `features/settings/store.rs`. Never inline
-   SQL elsewhere. Always use parameterised queries (`params![...]`), never string
-   interpolation.
+4. **SQL for a table lives in exactly one type.** The `tasks` table is owned by
+   `Shared/TaskStore.swift`; the `settings` table by `Features/Settings/SettingsStore.swift`.
+   Never inline SQL elsewhere. Always use parameterised SQL (`arguments:` / `?`), never
+   string interpolation.
 
 ### Data flow
 
-- Features expose a `show(&mut self, ui, &Connection, ...)` method called every frame and
-  return `Option<Outcome>` (or a richer event enum like `task_list::Event` when the shell
-  must do more than reload).
-- `Outcome` (`shared/outcome.rs`) has two variants: `Changed` (shell reloads tasks and
-  clears the error banner) and `Failed(String)` (shell shows the message). A
-  `rusqlite::Result` converts into it with `.into()`.
-- The shell reacts via `handle(outcome)` (reload the tasks) or `report(outcome)` (no
-  reload needed, e.g. settings). Features never reload or hold task data themselves;
-  the shell's `TaskSet` is the single source of truth, passed down by reference.
-- Errors surface through the error banner, never `unwrap()`/`expect()`/`panic!` on
-  database or runtime failures (tests may unwrap freely).
+- Features are SwiftUI views that take the data they need as arguments (the `TaskSet`, a
+  store, a `report` closure) and call a store in direct response to a user action.
+- `Outcome` (`Shared/Outcome.swift`) has two cases: `.changed` (the shell reloads tasks and
+  clears the error banner) and `.failed(String)` (the shell shows the message). Wrap store
+  calls in `Outcome.run { try store.… }`.
+- The shell reacts via `AppModel.handle(_:)` (reload the tasks) or `report(_:)` (no reload
+  needed, e.g. settings). Features never reload or hold task data themselves; the shell's
+  `TaskSet` is the single source of truth, passed down by reference.
+- Errors surface through the error banner. Never use `try!`, `fatalError` or force-unwraps
+  on database or runtime failures (tests may use them freely).
+- Models are `@MainActor @Observable`. Swift 6 strict concurrency is on; keep it warning-free.
 
-### Immediate-mode performance
+### Performance
 
-egui redraws every frame, so never do per-frame work that can be done once per change:
+SwiftUI re-evaluates view bodies often, so never do work per body evaluation that can be
+done once per change:
 
-- Derived data (search keys, counts) is computed in `TaskSet::replace` at load time and
-  cached; caches key on `TaskSet::revision()`, which bumps on every reload.
-- Follow this pattern for anything new: compute on change, cache keyed on revision,
-  read cheaply in `show`.
-- No database queries inside the per-frame draw path except in direct response to a user
-  action (click, submit).
+- Derived data (search keys, counts) is computed in `TaskSet.replace` at load time and
+  cached; caches key on `TaskSet.revision`, which bumps on every reload (see `VisibleCache`
+  in `TaskListView`).
+- Follow this pattern for anything new: compute on change, cache keyed on revision, read
+  cheaply in `body`.
+- The task list is a `List` so rows are recycled; it must stay smooth with 10,000+ tasks.
+- No database queries in `body` except in direct response to a user action.
 
 ### Database and migrations
 
-- The schema lives in `shared/db.rs::migrate` and runs on every open with
-  `CREATE TABLE IF NOT EXISTS`. Schema changes must be additive and backward-compatible:
-  an older database file must never prevent the app from starting.
+- The data file is `~/.hello_gui/tasks.db`, shared with the Rust-era app: tables `tasks`
+  and `settings`, status and priority as integer codes, due as `YYYY-MM-DD` or `''`,
+  settings keys `theme_mode`, `accent`, `ui_scale`, `compact_cards`, `show_notes`.
+- The schema lives in `AppDatabase.migrator` (GRDB `DatabaseMigrator`). `v1` uses
+  `CREATE TABLE IF NOT EXISTS` so an existing file is adopted untouched. Add new
+  migrations as new `registerMigration` entries; they must be additive and
+  backward-compatible. Never rename or drop a column, and never change what an existing
+  code means: an older database file must never prevent the app from starting.
 - Settings follow the same rule: missing or unrecognised values fall back to defaults
-  (see `settings/store.rs`). Multi-statement writes go in one transaction.
-- Enum columns map through explicit `to_db()`/`from_db()` methods on the domain types in
-  `shared/task.rs` — never store or match raw integers elsewhere.
+  (see `SettingsStore`). Multi-statement writes go in one transaction.
+- Enum columns map through explicit `dbValue` / `init(dbValue:)` conversions on the domain
+  types in `Shared/Task.swift`; never store or match raw integers elsewhere.
 
 ### Theming and UI
 
-- Never hard-code colours in features. Read them with `theme::palette(ui.ctx())` so the
-  active light/dark theme and accent colour apply automatically.
-- Reusable visual pieces (buttons, etc.) live in `shared/widgets.rs`; layout constants are
-  named `const`s with a doc comment saying what they align with.
-- The window has a hidden native title bar; dragging/zoom is handled by
-  `title_bar_drag_area` in `app.rs`, and the sidebar insets around the macOS traffic
-  lights. Don't break these when touching the layout.
-- macOS-specific code (the `muda` menu) stays behind `cfg(target_os = "macos")` and the
-  `menu.rs` boundary; features only ever see `Command` values.
+- Never hard-code colours in features. Use semantic styles (`.primary`, `.secondary`,
+  `.tint`) and the helpers in `Theme.swift` so the active light/dark theme and accent
+  apply automatically. Note `.tint` follows the chosen accent; `Color.accentColor` does not.
+- Text size goes through `Appearance.font(_:weight:)` so the Text size setting applies.
+- Reusable visual pieces live next to the feature that uses them until a second feature
+  needs them.
+- The window has a hidden title bar (`.windowStyle(.hiddenTitleBar)`) and a single
+  `Window` scene. Don't break dragging, the sidebar inset or the traffic lights when
+  touching the layout.
+- Menu commands live in `AppCommands`; features only ever see `AppActions`.
 
 ## Testing
 
-- Tests are inline `#[cfg(test)] mod tests` blocks next to the code they cover.
-- Database tests use `db::open_in_memory()` (already defined, test-only) and may seed
-  rows with `execute_batch`. No test touches the real `~/.hello_gui/tasks.db`.
+- Tests use Swift Testing (`import Testing`, `@Test`, `#expect`) in `TickoffTests/`, one
+  suite per type under test.
+- Database tests use `try AppDatabase()` (in-memory) and seed rows through the store or
+  `queue.write`. No test touches the real `~/.hello_gui/tasks.db`; when the hosted tests
+  launch the app it detects `XCTestConfigurationFilePath` and uses an in-memory database.
 - Test names describe behaviour in a full sentence, e.g.
-  `clear_completed_only_removes_done_tasks`.
+  `clearCompletedOnlyRemovesDoneTasks`.
 - New SQL functions and non-trivial derived-data logic need tests; pure UI layout does not.
+- Never drive the UI with synthetic clicks or keystrokes to verify it; that can hit other
+  apps. Take window-only screenshots instead.
 
 ## Style
 
-- Every module starts with a `//!` doc comment saying what it is and where its boundary
-  lies. Public items that aren't self-evident get a one-line `///`.
-- Comments explain *why* or a constraint the code can't show — not what the next line does.
-- Match the existing code's density and idiom; prefer small focused functions and the
-  existing enum-with-`label()`/`key()`/`ALL` pattern for user-selectable options.
-- Keep dependencies minimal: adding a crate is an architectural decision, not a convenience.
+- Every file starts with a `///` doc comment on its main type saying what it is and where
+  its boundary lies. Non-obvious members get a one-line `///`.
+- Comments explain *why* or a constraint the code can't show, not what the next line does.
+- Match the existing code's density and idiom; prefer small focused types and functions and
+  the existing enum-with-`label` / `CaseIterable` pattern for user-selectable options.
+- Keep dependencies minimal: adding a package is an architectural decision, not a
+  convenience.
