@@ -6,10 +6,11 @@ struct TickoffApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(model: model)
                 .applying(model.settings.appearance)
         }
         .windowStyle(.hiddenTitleBar)
+        .commands { SidebarCommands() }
 
         Settings {
             SettingsView(model: model.settings)
