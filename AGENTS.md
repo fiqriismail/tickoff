@@ -137,9 +137,10 @@ done once per change:
 - Text size goes through `Appearance.font(_:weight:)` so the Text size setting applies.
 - Reusable visual pieces live next to the feature that uses them until a second feature
   needs them.
-- The window has a hidden title bar (`.windowStyle(.hiddenTitleBar)`) and a single
-  `Window` scene. Don't break dragging, the sidebar inset or the traffic lights when
-  touching the layout.
+- The window is a single `Window` scene with a unified toolbar, like System Settings: the
+  page title and subtitle (`navigationTitle` / `navigationSubtitle`) and the search field
+  live in the toolbar, and content starts directly beneath it. Use one 20pt content margin
+  and system control sizes; don't hide the title bar or add manual top padding.
 - Menu commands live in `AppCommands`; features only ever see `AppActions`.
 
 ## Testing
