@@ -5,6 +5,7 @@ import SwiftUI
 struct ContentView: View {
     let model: AppModel
     @State private var filter: Filter = .all
+    @State private var editing: Task?
 
     var body: some View {
         NavigationSplitView {
@@ -17,14 +18,17 @@ struct ContentView: View {
             TaskListView(
                 tasks: model.tasks, filter: filter, appearance: model.settings.appearance,
                 store: model.taskStore, report: model.handle,
-                // The edit dialog arrives with #17.
-                edit: { _ in }
+                edit: { editing = $0 },
+                accessory: { AddTaskBar(store: model.taskStore, report: model.handle) }
             )
                 .safeAreaInset(edge: .top, spacing: 0) {
                     if let message = model.errorMessage {
                         ErrorBanner(message: message, dismiss: model.dismissError)
                     }
                 }
+        }
+        .sheet(item: $editing) { task in
+            EditTaskView(task: task, store: model.taskStore, finish: model.handle)
         }
         .frame(minWidth: 720, minHeight: 480)
     }

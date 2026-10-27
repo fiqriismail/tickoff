@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The detail column: a header with the filter name and count, a search field (⌘F), and a lazily
 /// built list of task cards. It holds no task data of its own; the shell's `TaskSet` is passed in.
-struct TaskListView: View {
+struct TaskListView<Accessory: View>: View {
     let tasks: TaskSet
     let filter: Filter
     let appearance: Appearance
@@ -10,6 +10,8 @@ struct TaskListView: View {
     let report: (Outcome) -> Void
     /// Opens the edit dialog; the shell decides what that means.
     let edit: (Task) -> Void
+    /// Shell-supplied content shown between the header and the list (the quick-add bar).
+    @ViewBuilder let accessory: () -> Accessory
 
     @State private var query = ""
     @State private var cache = VisibleCache()
@@ -23,6 +25,9 @@ struct TaskListView: View {
         let visible = cache.tasks(in: tasks, status: filter.status, query: query)
         VStack(spacing: 0) {
             header(count: visible.count)
+            accessory()
+                .padding(.horizontal, 24)
+                .padding(.bottom, 8)
             if visible.isEmpty {
                 emptyState
             } else {
