@@ -65,4 +65,19 @@ struct Task: Identifiable, Equatable, Sendable {
     var due: String
 
     var isDone: Bool { status == .done }
+
+    /// The due date at the start of its day, or `nil` when there is none or it isn't a real
+    /// `YYYY-MM-DD` date (a hand-edited file may hold anything).
+    func dueDate(calendar: Calendar = .current) -> Date? {
+        let parts = due.split(separator: "-", omittingEmptySubsequences: false)
+        guard parts.count == 3, let year = Int(parts[0]), let month = Int(parts[1]),
+            let day = Int(parts[2])
+        else { return nil }
+        let components = DateComponents(year: year, month: month, day: day)
+        guard let date = calendar.date(from: components) else { return nil }
+        // `date(from:)` rolls impossible dates over (Feb 31 becomes Mar 3); reject those.
+        let check = calendar.dateComponents([.year, .month, .day], from: date)
+        guard check.year == year, check.month == month, check.day == day else { return nil }
+        return date
+    }
 }

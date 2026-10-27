@@ -14,10 +14,12 @@ struct ContentView: View {
             )
             .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 300)
         } detail: {
-            // #16 replaces this placeholder with the task list.
-            Text("\(filter.label): \(model.tasks.count(filter.status))")
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            TaskListView(
+                tasks: model.tasks, filter: filter, appearance: model.settings.appearance,
+                store: model.taskStore, report: model.handle,
+                // The edit dialog arrives with #17.
+                edit: { _ in }
+            )
                 .safeAreaInset(edge: .top, spacing: 0) {
                     if let message = model.errorMessage {
                         ErrorBanner(message: message, dismiss: model.dismissError)

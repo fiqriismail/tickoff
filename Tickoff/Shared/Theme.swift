@@ -120,6 +120,14 @@ struct Appearance: Equatable, Sendable {
     static let `default` = Appearance()
 }
 
+extension Appearance {
+    /// A font `relativeSize` times the macOS body size at the chosen text size. Features use this
+    /// for headings and captions so they follow the text-size setting like the body text does.
+    func font(_ relativeSize: CGFloat = 1, weight: Font.Weight = .regular) -> Font {
+        .system(size: NSFont.systemFontSize * scale.factor * relativeSize, weight: weight)
+    }
+}
+
 extension View {
     /// Applies the colour scheme, accent and text size, live, to everything inside this view.
     func applying(_ appearance: Appearance) -> some View {
