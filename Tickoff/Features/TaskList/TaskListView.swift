@@ -8,6 +8,8 @@ struct TaskListView<Accessory: View>: View {
     let appearance: Appearance
     let store: TaskStore
     let report: (Outcome) -> Void
+    /// Changes when the shell wants the search field focused (Find).
+    let searchRequest: Int
     /// Opens the edit dialog; the shell decides what that means.
     let edit: (Task) -> Void
     /// Shell-supplied content shown between the header and the list (the quick-add bar).
@@ -34,12 +36,7 @@ struct TaskListView<Accessory: View>: View {
                 list(visible)
             }
         }
-        .background {
-            Button("Find") { searchFocused = true }
-                .keyboardShortcut("f", modifiers: .command)
-                .opacity(0)
-                .accessibilityHidden(true)
-        }
+        .onChange(of: searchRequest) { searchFocused = true }
     }
 
     private func header(count: Int) -> some View {
