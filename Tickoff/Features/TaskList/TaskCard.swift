@@ -36,12 +36,14 @@ struct TaskCard: View {
             }
             Spacer(minLength: 8)
 
-            HStack(spacing: 4) {
-                Button("Edit", action: edit).help("Edit this task")
-                Button("Delete", role: .destructive, action: delete).help("Delete this task")
+            HStack(spacing: 2) {
+                Button("Edit", systemImage: "pencil", action: edit).help("Edit this task")
+                Button("Delete", systemImage: "trash", role: .destructive, action: delete)
+                    .help("Delete this task")
             }
+            .labelStyle(.iconOnly)
             .buttonStyle(.borderless)
-            .font(appearance.font(0.9))
+            .controlSize(.large)
             .foregroundStyle(.secondary)
         }
         .padding(.horizontal, compact ? 16 : 22)
@@ -138,7 +140,7 @@ private struct Pill: View {
             .font(font)
             .foregroundStyle(style)
             .padding(.horizontal, 8)
-            .padding(.vertical, 2)
+            .padding(.vertical, 3)
             .background(Capsule().fill(style).opacity(0.14))
     }
 }

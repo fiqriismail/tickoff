@@ -32,7 +32,8 @@ struct FiltersView: View {
             if done > 0 {
                 Button("Clear completed", role: .destructive) { confirmingClear = true }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding([.horizontal, .bottom], 12)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
                     .buttonStyle(.link)
             }
         }

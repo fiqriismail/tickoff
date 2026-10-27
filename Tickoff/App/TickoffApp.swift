@@ -16,7 +16,7 @@ struct TickoffApp: App {
             ContentView(model: model)
                 .applying(model.settings.appearance)
         }
-        .windowStyle(.hiddenTitleBar)
+        .windowToolbarStyle(.unified)
         .commands { AppCommands() }
 
         Settings {

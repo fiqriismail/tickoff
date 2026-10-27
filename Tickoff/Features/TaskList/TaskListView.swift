@@ -15,6 +15,11 @@ struct TaskListView<Accessory: View>: View {
     /// Shell-supplied content shown between the header and the list (the quick-add bar).
     @ViewBuilder let accessory: () -> Accessory
 
+    /// The standard macOS content margin; header, add bar and cards all align to it.
+    private static var margin: CGFloat { 20 }
+    /// The side padding `List` adds around every row itself, subtracted so cards line up with the header.
+    private static var listRowSideInset: CGFloat { 10 }
+
     @State private var query = ""
     @State private var cache = VisibleCache()
     @FocusState private var searchFocused: Bool
@@ -26,39 +31,29 @@ struct TaskListView<Accessory: View>: View {
     var body: some View {
         let visible = cache.tasks(in: tasks, status: filter.status, query: query)
         VStack(spacing: 0) {
-            header(count: visible.count)
             accessory()
-                .padding(.horizontal, 24)
-                .padding(.bottom, 8)
+                .padding(.horizontal, Self.margin)
+                .padding(.vertical, 12)
             if visible.isEmpty {
                 emptyState
             } else {
                 list(visible)
             }
         }
+        // Title and search live in the window toolbar, like System Settings.
+        .navigationTitle(filter.label)
+        .navigationSubtitle(subtitle(count: visible.count))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                searchField.frame(width: 220)
+            }
+        }
         .onChange(of: searchRequest) { searchFocused = true }
     }
 
-    private func header(count: Int) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 16) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(filter.label).font(appearance.font(1.8, weight: .bold))
-                    Text("\(count)")
-                        .font(appearance.font(1.1, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-                Text(Date.now, format: .dateTime.weekday(.wide).day().month(.wide))
-                    .font(appearance.font(0.9))
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            searchField.frame(maxWidth: 260)
-        }
-        .padding(.horizontal, 24)
-        .padding(.top, 16)
-        .padding(.bottom, 12)
+    private func subtitle(count: Int) -> String {
+        let date = Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide))
+        return "\(count) \(count == 1 ? "task" : "tasks") · \(date)"
     }
 
     private var searchField: some View {
@@ -79,10 +74,7 @@ struct TaskListView<Accessory: View>: View {
                 .accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(nsColor: .separatorColor)))
+        .padding(.horizontal, 8)
     }
 
     /// A `List` is backed by a recycling table, so only the rows on screen exist however many tasks
@@ -99,8 +91,8 @@ struct TaskListView<Accessory: View>: View {
             )
             .listRowInsets(
                 EdgeInsets(
-                    top: appearance.compactCards ? 4 : 7, leading: 24,
-                    bottom: appearance.compactCards ? 4 : 7, trailing: 24)
+                    top: appearance.compactCards ? 4 : 6, leading: Self.margin - Self.listRowSideInset,
+                    bottom: appearance.compactCards ? 4 : 6, trailing: Self.margin - Self.listRowSideInset)
             )
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)

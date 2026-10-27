@@ -28,6 +28,7 @@ struct AddTaskBar: View {
             Button("Add", systemImage: "plus", action: add)
                 .buttonStyle(.borderedProminent)
         }
+        .controlSize(.large)
     }
 
     private func add() {
