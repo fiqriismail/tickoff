@@ -7,7 +7,7 @@ enum Filter: Hashable, CaseIterable, Sendable {
 
     var label: String {
         switch self {
-        case .all: "All tasks"
+        case .all: "All Tasks"
         case .status(let status): status.label
         }
     }

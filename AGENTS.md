@@ -139,7 +139,7 @@ done once per change:
   needs them.
 - The window is a single `Window` scene with a unified toolbar, like System Settings: the
   page title and subtitle (`navigationTitle` / `navigationSubtitle`) and the search field
-  live in the toolbar, and content starts directly beneath it. Use one 20pt content margin
+  live in the toolbar, and content starts directly beneath it. Use one 16pt content margin
   and system control sizes; don't hide the title bar or add manual top padding.
 - Menu commands live in `AppCommands`; features only ever see `AppActions`.
 

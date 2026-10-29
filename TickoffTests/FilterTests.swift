@@ -11,6 +11,6 @@ struct FilterTests {
     @Test func theSidebarOffersAllThenEachStatusInOrder() {
         #expect(Filter.allCases == [.all, .status(.todo), .status(.inProgress), .status(.done)])
         #expect(
-            Filter.allCases.map(\.label) == ["All tasks", "To do", "In progress", "Done"])
+            Filter.allCases.map(\.label) == ["All Tasks", "To Do", "In Progress", "Done"])
     }
 }

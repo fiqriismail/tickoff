@@ -17,7 +17,7 @@ struct TaskCard: View {
                 setStatus(task.isDone ? .todo : .done)
             }
 
-            VStack(alignment: .leading, spacing: compact ? 0 : 6) {
+            VStack(alignment: .leading, spacing: compact ? 0 : 9) {
                 if compact {
                     HStack(spacing: 8) {
                         title
@@ -46,8 +46,8 @@ struct TaskCard: View {
             .controlSize(.large)
             .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, compact ? 16 : 22)
-        .padding(.vertical, compact ? 9 : 20)
+        .padding(.horizontal, 16)
+        .padding(.vertical, compact ? 8 : 14)
         .background(
             RoundedRectangle(cornerRadius: 12).fill(Color(nsColor: .controlBackgroundColor))
         )
@@ -125,8 +125,8 @@ private struct StatusCircle: View {
             .frame(width: 22, height: 22)
         }
         .buttonStyle(.plain)
-        .help(status == .done ? "Mark as To do" : "Mark as Done")
-        .accessibilityLabel(status == .done ? "Mark as To do" : "Mark as Done")
+        .help(status == .done ? "Mark as To Do" : "Mark as Done")
+        .accessibilityLabel(status == .done ? "Mark as To Do" : "Mark as Done")
     }
 }
 
@@ -150,7 +150,7 @@ extension Status {
     fileprivate var style: AnyShapeStyle {
         switch self {
         case .todo: AnyShapeStyle(.secondary)
-        case .inProgress: AnyShapeStyle(.tint)
+        case .inProgress: AnyShapeStyle(Color.blue)
         case .done: AnyShapeStyle(Color.green)
         }
     }

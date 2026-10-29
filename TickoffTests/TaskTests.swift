@@ -29,7 +29,7 @@ struct TaskTests {
     }
 
     @Test func labelsAreTheUserFacingNames() {
-        #expect(Status.allCases.map(\.label) == ["To do", "In progress", "Done"])
+        #expect(Status.allCases.map(\.label) == ["To Do", "In Progress", "Done"])
         #expect(Priority.allCases.map(\.label) == ["Low", "Medium", "High"])
     }
 }

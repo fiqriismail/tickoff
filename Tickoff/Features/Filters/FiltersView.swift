@@ -17,31 +17,32 @@ struct FiltersView: View {
                         .badge(tasks.count(filter.status))
                 }
             }
-
-            Section("Progress") {
-                VStack(alignment: .leading, spacing: 6) {
-                    ProgressView(value: Double(done), total: Double(max(total, 1)))
-                    Text("\(done) of \(total) completed")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 4)
-            }
         }
-        .safeAreaInset(edge: .bottom) {
-            if done > 0 {
-                Button("Clear completed", role: .destructive) { confirmingClear = true }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
-                    .buttonStyle(.link)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Progress")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                ProgressView(value: Double(done), total: Double(max(total, 1)))
+                Text("\(done) of \(total) completed")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button { confirmingClear = true } label: {
+                    Text("Clear Completed").frame(maxWidth: .infinity)
+                }
+                    .buttonStyle(.bordered)
+                    .tint(.secondary)
+                    .controlSize(.large)
+                    .disabled(done == 0)
+                    .padding(.top, 6)
             }
+            .padding(16)
         }
         .confirmationDialog(
             "Clear \(done) completed \(done == 1 ? "task" : "tasks")?",
             isPresented: $confirmingClear
         ) {
-            Button("Clear completed", role: .destructive) {
+            Button("Clear Completed", role: .destructive) {
                 report(Outcome.run { try store.clearCompleted() })
             }
         } message: {
