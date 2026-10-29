@@ -13,7 +13,7 @@ struct AddTaskBar: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            TextField("Add a task and press Enter…", text: $title)
+            TextField("Add a task and press Return", text: $title)
                 .textFieldStyle(.roundedBorder)
                 .focused($focused)
                 .onSubmit(add)

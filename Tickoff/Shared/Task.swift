@@ -8,8 +8,8 @@ enum Status: Int, CaseIterable, Sendable {
 
     var label: String {
         switch self {
-        case .todo: "To do"
-        case .inProgress: "In progress"
+        case .todo: "To Do"
+        case .inProgress: "In Progress"
         case .done: "Done"
         }
     }
