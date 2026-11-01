@@ -10,6 +10,9 @@ struct Project: Identifiable, Equatable, Sendable {
     var archived: Bool
     /// The default project every task can fall back to; it can be neither deleted nor archived.
     var isInbox: Bool
+
+    /// Inbox is seeded by migration `v2` with this id, which is also `tasks.project_id`'s default.
+    static let inboxID: Int64 = 1
 }
 
 /// Why a project command was refused. The text is shown in the error banner.

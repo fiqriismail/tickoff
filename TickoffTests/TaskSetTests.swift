@@ -3,8 +3,12 @@ import Testing
 @testable import Tickoff
 
 struct TaskSetTests {
-    private func make(_ title: String, _ status: Status, notes: String = "Milk") -> Task {
-        Task(id: 1, title: title, notes: notes, priority: .medium, status: status, due: "")
+    private func make(_ title: String, _ status: Status, notes: String = "Milk", project: Int64 = Project.inboxID)
+        -> Task
+    {
+        Task(
+            id: 1, title: title, notes: notes, priority: .medium, status: status, due: "",
+            projectID: project)
     }
 
     @Test func countsAndSearchesWithoutRescanning() {
@@ -40,5 +44,30 @@ struct TaskSetTests {
         #expect(set.visible(status: .todo, query: "  EGGS ").map(\.title) == ["Buy Eggs"])
         #expect(set.visible(status: .done, query: "milk").map(\.title) == ["Eggs benedict"])
         #expect(set.visible(status: .inProgress, query: "").isEmpty)
+    }
+
+    @Test func countsPerProjectAndStatusAreCachedOnReplace() {
+        var set = TaskSet()
+        set.replace([
+            make("a", .todo, project: 1), make("b", .done, project: 1),
+            make("c", .todo, project: 2), make("d", .inProgress, project: 2),
+            make("e", .todo, project: 2),
+        ])
+
+        #expect(set.count(nil, project: 1) == 2)
+        #expect(set.count(.todo, project: 1) == 1)
+        #expect(set.count(.todo, project: 2) == 2)
+        #expect(set.count(.done, project: 2) == 0)
+        #expect(set.count(nil, project: 99) == 0)
+        #expect(set.count(.todo) == 3)
+    }
+
+    @Test func replacingTasksDropsCountsOfProjectsThatNoLongerHaveAny() {
+        var set = TaskSet()
+        set.replace([make("a", .todo, project: 2)])
+        set.replace([make("b", .todo, project: 1)])
+
+        #expect(set.count(nil, project: 2) == 0)
+        #expect(set.count(nil, project: 1) == 1)
     }
 }

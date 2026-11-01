@@ -63,6 +63,7 @@ struct Task: Identifiable, Equatable, Sendable {
     var status: Status
     /// ISO date (`YYYY-MM-DD`), empty when there is no due date.
     var due: String
+    var projectID: Int64
 
     var isDone: Bool { status == .done }
 

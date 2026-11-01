@@ -11,7 +11,7 @@ struct TaskStore: Sendable {
             try Row.fetchAll(
                 db,
                 sql: """
-                    SELECT id, title, notes, priority, status, due FROM tasks
+                    SELECT id, title, notes, priority, status, due, project_id FROM tasks
                     ORDER BY (status = 2), priority DESC, (due = ''), due, id DESC
                     """
             ).map(Self.task(from:))
@@ -19,11 +19,11 @@ struct TaskStore: Sendable {
     }
 
     @discardableResult
-    func insert(title: String, priority: Priority) throws -> Int64 {
+    func insert(title: String, priority: Priority, projectID: Int64 = Project.inboxID) throws -> Int64 {
         try database.queue.write { db in
             try db.execute(
-                sql: "INSERT INTO tasks (title, priority) VALUES (?, ?)",
-                arguments: [title, priority.dbValue])
+                sql: "INSERT INTO tasks (title, priority, project_id) VALUES (?, ?, ?)",
+                arguments: [title, priority.dbValue, projectID])
             return db.lastInsertedRowID
         }
     }
@@ -34,12 +34,13 @@ struct TaskStore: Sendable {
         try database.queue.write { db in
             try db.execute(
                 sql: """
-                    UPDATE tasks SET title = ?, notes = ?, priority = ?, status = ?, due = ?
+                    UPDATE tasks SET title = ?, notes = ?, priority = ?, status = ?, due = ?,
+                        project_id = ?
                     WHERE id = ?
                     """,
                 arguments: [
                     task.title, task.notes, task.priority.dbValue, task.status.dbValue, task.due,
-                    task.id,
+                    task.projectID, task.id,
                 ])
             return db.changesCount
         }
@@ -86,6 +87,7 @@ struct TaskStore: Sendable {
             notes: String.fromDatabaseValue(row[2]) ?? "",
             priority: Priority(dbValue: Int.fromDatabaseValue(row[3]) ?? Priority.medium.dbValue),
             status: Status(dbValue: Int.fromDatabaseValue(row[4]) ?? Status.todo.dbValue),
-            due: String.fromDatabaseValue(row[5]) ?? "")
+            due: String.fromDatabaseValue(row[5]) ?? "",
+            projectID: Int64.fromDatabaseValue(row[6]) ?? Project.inboxID)
     }
 }

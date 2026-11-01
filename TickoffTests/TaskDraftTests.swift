@@ -12,7 +12,7 @@ struct TaskDraftTests {
 
     private func draft(_ title: String, due: String = "") -> TaskDraft {
         TaskDraft(
-            task: Task(id: 1, title: title, notes: "", priority: .medium, status: .todo, due: due),
+            task: Task(id: 1, title: title, notes: "", priority: .medium, status: .todo, due: due, projectID: Project.inboxID),
             calendar: calendar)
     }
 
@@ -45,10 +45,10 @@ struct TaskDraftTests {
 
     @Test func editingKeepsTheOtherFields() throws {
         var edited = TaskDraft(
-            task: Task(id: 9, title: "a", notes: "n", priority: .high, status: .inProgress, due: ""),
+            task: Task(id: 9, title: "a", notes: "n", priority: .high, status: .inProgress, due: "", projectID: 1),
             calendar: calendar)
         edited.title = "b"
         let task = try edited.validated(calendar: calendar)
-        #expect(task == Task(id: 9, title: "b", notes: "n", priority: .high, status: .inProgress, due: ""))
+        #expect(task == Task(id: 9, title: "b", notes: "n", priority: .high, status: .inProgress, due: "", projectID: 1))
     }
 }

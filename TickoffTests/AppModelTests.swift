@@ -96,4 +96,19 @@ struct AppModelTests {
 
         #expect(model.errorMessage == nil)
     }
+
+    @Test func perProjectCountsRefreshAfterATaskMovesProject() throws {
+        let model = try seededModel()
+        let work = try ProjectStore(database: model.database).create(name: "Work")
+        #expect(model.tasks.count(nil, project: Project.inboxID) == 5)
+
+        try model.database.queue.write { db in
+            try db.execute(
+                sql: "UPDATE tasks SET project_id = ? WHERE status = 2", arguments: [work])
+        }
+        model.reload()
+
+        #expect(model.tasks.count(nil, project: Project.inboxID) == 3)
+        #expect(model.tasks.count(.done, project: work) == 2)
+    }
 }
