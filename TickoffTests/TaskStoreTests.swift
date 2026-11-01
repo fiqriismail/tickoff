@@ -139,4 +139,17 @@ struct TaskStoreTests {
 
         #expect(try store.loadAll().first?.projectID == work)
     }
+
+    @Test func clearCompletedCanBeLimitedToOneProject() throws {
+        let (store, database) = try makeStore()
+        let work = try ProjectStore(database: database).create(name: "Work")
+        let inboxDone = try store.insert(title: "inbox done", priority: .low)
+        let workDone = try store.insert(title: "work done", priority: .low, projectID: work)
+        try store.insert(title: "work open", priority: .low, projectID: work)
+        try store.setStatus(id: inboxDone, to: .done)
+        try store.setStatus(id: workDone, to: .done)
+
+        #expect(try store.clearCompleted(project: work) == 1)
+        #expect(Set(try store.loadAll().map(\.title)) == ["inbox done", "work open"])
+    }
 }
