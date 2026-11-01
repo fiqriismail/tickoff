@@ -31,3 +31,17 @@ enum ProjectError: LocalizedError, Equatable {
         }
     }
 }
+
+/// Which projects the shell is showing: all of them, or one. In memory only.
+enum ProjectScope: Hashable, Sendable {
+    case all
+    case project(Int64)
+
+    /// The project id this scope selects, or `nil` for all projects.
+    var projectID: Int64? {
+        switch self {
+        case .all: nil
+        case .project(let id): id
+        }
+    }
+}
