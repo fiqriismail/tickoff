@@ -55,7 +55,10 @@ struct ContentView: View {
         }
         .focusedSceneValue(
             \.appActions,
-            AppActions(newTask: { newTaskRequest += 1 }, find: { findRequest += 1 })
+            AppActions(
+                newTask: { newTaskRequest += 1 },
+                newProject: { projectSheet = ProjectSheet(project: nil) },
+                find: { findRequest += 1 })
         )
         .frame(minWidth: 720, minHeight: 480)
     }

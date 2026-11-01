@@ -5,6 +5,7 @@ import SwiftUI
 /// value, so a command reaches the shell without any feature importing another.
 struct AppActions {
     var newTask: () -> Void
+    var newProject: () -> Void
     var find: () -> Void
 }
 
@@ -12,7 +13,7 @@ extension FocusedValues {
     @Entry var appActions: AppActions?
 }
 
-/// The menu bar: New Task ⌘N, Find Tasks ⌘F, Hide/Show Sidebar ⌃⌘S and the About panel.
+/// The menu bar: New Task ⌘N, New Project ⇧⌘N, Find Tasks ⌘F, Hide/Show Sidebar ⌃⌘S and the About panel.
 /// Settings ⌘, comes from the `Settings` scene, and the Edit and Window menus are the standard ones.
 struct AppCommands: Commands {
     @FocusedValue(\.appActions) private var actions
@@ -23,6 +24,9 @@ struct AppCommands: Commands {
         CommandGroup(replacing: .newItem) {
             Button("New Task") { actions?.newTask() }
                 .keyboardShortcut("n")
+                .disabled(actions == nil)
+            Button("New Project…") { actions?.newProject() }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
                 .disabled(actions == nil)
         }
 
