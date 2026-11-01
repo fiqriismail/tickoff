@@ -9,7 +9,8 @@ rather than inventing new ones.
   Package Manager) for SQLite, Swift Testing for tests. macOS only.
 - **History:** the app was rewritten from Rust/egui. The last Rust commit is tagged
   `v0.1.0-rust`. The background and decisions are in `brain/docs/swift-port.md`.
-- **Next up:** the Projects milestone (epic #1), built on this code.
+- **Projects:** the Projects milestone (epic #1) adds a project level above tasks; see the
+  Projects section below.
 
 ## Commands
 
@@ -52,17 +53,20 @@ Tickoff/
   App/                 # the SHELL: owns the database + TaskSet, lays out the window,
                        # routes menu commands and feature Outcomes. No feature logic here.
     TickoffApp.swift       entry point, scenes (main window, Settings), app delegate
-    AppModel.swift         database, TaskStore, SettingsModel, TaskSet, error banner state
+    AppModel.swift         database, stores, SettingsModel, TaskSet, projects + selected scope,
+                           error banner state
     ContentView.swift      NavigationSplitView, edit sheet, menu-command routing
     AppCommands.swift      menu bar commands (New Task, Find, About)
     ErrorBanner.swift
   Features/            # one folder per feature; UI + state + calls to a store
-    AddTask/  EditTask/  Filters/  Settings/  TaskList/
+    AddTask/  EditTask/  Filters/  Projects/  Settings/  TaskList/
   Shared/              # cross-cutting building blocks used by 2+ features
     AppDatabase.swift      opens the database and runs migrations
     TaskStore.swift        the ONE place that talks SQL about the `tasks` table
     Task.swift             Task, Status, Priority domain types
-    TaskSet.swift          loaded tasks plus cached search keys and counts
+    Project.swift          Project, ProjectScope, ProjectError
+    ProjectStore.swift     the ONE place that talks SQL about the `projects` table
+    TaskSet.swift          loaded tasks plus cached search keys and counts (also per project)
     Outcome.swift          what a feature reports back to the shell
     Theme.swift            appearance preferences, accent colours, text scaling
   Resources/           # asset catalog
@@ -83,9 +87,25 @@ packaging/macos/       # release.sh, make_icon.swift
 3. **`Shared/` stays small.** Something moves there only when two or more features
    genuinely need it. Everything else lives inside the feature that uses it.
 4. **SQL for a table lives in exactly one type.** The `tasks` table is owned by
-   `Shared/TaskStore.swift`; the `settings` table by `Features/Settings/SettingsStore.swift`.
-   Never inline SQL elsewhere. Always use parameterised SQL (`arguments:` / `?`), never
+   `Shared/TaskStore.swift`; the `projects` table by `Shared/ProjectStore.swift`; the
+   `settings` table by `Features/Settings/SettingsStore.swift`. Never inline SQL elsewhere.
+   When one store must touch another table inside its transaction (deleting a project removes
+   its tasks), it calls a static helper on the owning store (`TaskStore.deleteTasks`). Always use parameterised SQL (`arguments:` / `?`), never
    string interpolation.
+
+### Projects
+
+- Every task has a `project_id`; **Inbox** (`Project.inboxID` = 1, seeded by `v2`) is the
+  default and cannot be archived or deleted. Names are trimmed, non-empty and unique
+  ignoring case (`ProjectStore` enforces it and throws `ProjectError`).
+- The selected scope (`ProjectScope`, in memory only) lives in `AppModel`; `reload` falls back
+  to All Projects when the selected project is deleted or archived. Archived projects are
+  hidden from the sidebar and pickers, but their tasks still show under All Projects.
+- The sidebar `List` is owned by `Features/Filters/FiltersView`; it takes the Projects section
+  as a `@ViewBuilder` from the shell (features never import each other), and its selection
+  holds one scope and one status filter, reconciled by `SidebarSelection`.
+- Per-project status counts are cached in `TaskSet.replace`, like the other counts.
+- Deleting a project deletes its tasks in one transaction (no FK cascade).
 
 ### Data flow
 
@@ -116,8 +136,8 @@ done once per change:
 
 ### Database and migrations
 
-- The data file is `~/.hello_gui/tasks.db`, shared with the Rust-era app: tables `tasks`
-  and `settings`, status and priority as integer codes, due as `YYYY-MM-DD` or `''`,
+- The data file is `~/.hello_gui/tasks.db`, shared with the Rust-era app: tables `tasks`,
+  `projects` (added by migration `v2`, Inbox is id 1) and `settings`, status and priority as integer codes, due as `YYYY-MM-DD` or `''`,
   settings keys `theme_mode`, `accent`, `ui_scale`, `compact_cards`, `show_notes`.
 - The schema lives in `AppDatabase.migrator` (GRDB `DatabaseMigrator`). `v1` uses
   `CREATE TABLE IF NOT EXISTS` so an existing file is adopted untouched. Add new
