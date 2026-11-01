@@ -9,7 +9,6 @@ struct TaskDraft: Equatable {
     var status: Status
     var hasDue: Bool
     var dueDate: Date
-    /// Carried through untouched until the edit sheet lets the user move a task (#7).
     var projectID: Int64
 
     struct ValidationError: Error, Equatable {

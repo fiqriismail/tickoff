@@ -29,7 +29,7 @@ struct ContentView: View {
                 edit: { editing = $0 },
                 accessory: {
                     AddTaskBar(
-                        store: model.taskStore, report: model.handle, focusRequest: newTaskRequest)
+                        store: model.taskStore, projectID: model.newTaskProjectID, report: model.handle, focusRequest: newTaskRequest)
                 }
             )
                 .safeAreaInset(edge: .top, spacing: 0) {
@@ -39,7 +39,9 @@ struct ContentView: View {
                 }
         }
         .sheet(item: $editing) { task in
-            EditTaskView(task: task, store: model.taskStore, finish: model.handle)
+            EditTaskView(
+                task: task, store: model.taskStore, projects: model.projectChoices(for: task),
+                finish: model.handle)
         }
         .focusedSceneValue(
             \.appActions,

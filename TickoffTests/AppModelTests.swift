@@ -167,4 +167,41 @@ struct AppModelTests {
 
         #expect(model.scope == .all)
     }
+
+    @Test func newTasksGoToTheSelectedProjectOrInboxUnderAllProjects() throws {
+        let model = try seededModel()
+        let work = try model.projectStore.create(name: "Work")
+        model.reload()
+
+        #expect(model.newTaskProjectID == Project.inboxID)
+        model.select(.project(work))
+        #expect(model.newTaskProjectID == work)
+    }
+
+    @Test func theEditPickerOffersVisibleProjectsPlusTheTasksOwnArchivedOne() throws {
+        let model = try seededModel()
+        let old = try model.projectStore.create(name: "Old")
+        let other = try model.projectStore.create(name: "Other")
+        try model.projectStore.setArchived(id: old, true)
+        try model.projectStore.setArchived(id: other, true)
+        try model.taskStore.insert(title: "stuck", priority: .low, projectID: old)
+        model.reload()
+        let task = try #require(model.tasks.items.first { $0.title == "stuck" })
+
+        #expect(model.projectChoices(for: task).map(\.name) == ["Inbox", "Old"])
+    }
+
+    @Test func movingATaskInTheEditSheetMovesItInTheList() throws {
+        let model = try seededModel()
+        let work = try model.projectStore.create(name: "Work")
+        model.reload()
+        var task = try #require(model.tasks.items.first)
+
+        task.projectID = work
+        try model.taskStore.update(task)
+        model.reload()
+
+        #expect(model.tasks.visible(status: nil, project: work, query: "").map(\.id) == [task.id])
+        #expect(model.tasks.count(nil, project: Project.inboxID) == 4)
+    }
 }

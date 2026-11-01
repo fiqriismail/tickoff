@@ -4,6 +4,8 @@ import SwiftUI
 /// The shell presents it and gets the `Outcome` back; this feature never reloads anything itself.
 struct EditTaskView: View {
     let store: TaskStore
+    /// The projects the task can be moved to, supplied by the shell.
+    let projects: [Project]
     let finish: (Outcome) -> Void
 
     @State private var draft: TaskDraft
@@ -11,8 +13,11 @@ struct EditTaskView: View {
     @FocusState private var titleFocused: Bool
     @Environment(\.dismiss) private var dismiss
 
-    init(task: Task, store: TaskStore, finish: @escaping (Outcome) -> Void) {
+    init(
+        task: Task, store: TaskStore, projects: [Project], finish: @escaping (Outcome) -> Void
+    ) {
         self.store = store
+        self.projects = projects
         self.finish = finish
         _draft = State(initialValue: TaskDraft(task: task))
     }
@@ -52,6 +57,13 @@ struct EditTaskView: View {
                     }
                     .labelsHidden()
                 }
+            }
+
+            field("Project") {
+                Picker("Project", selection: $draft.projectID) {
+                    ForEach(projects) { Text($0.name).tag($0.id) }
+                }
+                .labelsHidden()
             }
 
             field("Due date") {
