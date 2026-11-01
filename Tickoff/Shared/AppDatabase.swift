@@ -48,6 +48,24 @@ struct AppDatabase: Sendable {
                     );
                     """)
         }
+        // `v2` adds projects. Inbox is seeded with id 1 so it can be `tasks.project_id`'s default:
+        // existing rows are backfilled by the column default, and an older build that inserts
+        // tasks without knowing about projects still lands them in Inbox.
+        migrator.registerMigration("v2") { db in
+            try db.execute(
+                sql: """
+                    CREATE TABLE projects (
+                        id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name     TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+                        colour   TEXT    NOT NULL DEFAULT 'system',
+                        notes    TEXT    NOT NULL DEFAULT '',
+                        archived INTEGER NOT NULL DEFAULT 0,
+                        is_inbox INTEGER NOT NULL DEFAULT 0
+                    );
+                    INSERT INTO projects (id, name, is_inbox) VALUES (1, 'Inbox', 1);
+                    ALTER TABLE tasks ADD COLUMN project_id INTEGER NOT NULL DEFAULT 1;
+                    """)
+        }
         return migrator
     }
 }
