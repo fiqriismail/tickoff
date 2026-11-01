@@ -15,7 +15,8 @@ A small, native task manager for macOS, written in Swift with SwiftUI and a loca
 ## Features
 
 - Add, edit, complete and delete tasks, each with a title, notes, priority (Low / Medium / High), status (To do / In progress / Done) and optional due date
-- Sidebar filters by status with live counts, a progress summary and "Clear completed"
+- Projects: every task belongs to one project. The sidebar scopes the list to a project (or All Projects), with a colour dot and live count per project. Create, edit, archive and delete projects from the sidebar "+" or File > New Project…; new tasks go to the selected project, and the edit sheet can move a task
+- Sidebar filters by status with live counts (within the chosen project), a progress summary and "Clear completed"
 - Search across titles and notes
 - Right-click a task for a context menu; click a status pill to move it to the next status
 - Settings: light / dark / follow-system theme, accent colour (System, Indigo, Violet, Teal, Rose, Orange), text size, compact cards, and a toggle for note previews
@@ -29,6 +30,7 @@ A small, native task manager for macOS, written in Swift with SwiftUI and a loca
 | Action | Shortcut |
 |---|---|
 | New task | ⌘N |
+| New project | ⇧⌘N |
 | Find tasks | ⌘F |
 | Settings | ⌘, |
 | Hide / show sidebar | ⌃⌘S |
@@ -73,13 +75,15 @@ This archives the app in Release, ad-hoc signs it and writes `dist/Tickoff-<vers
 
 ## Where your data lives
 
-Tasks and settings are stored in a single SQLite file in your home directory:
+Projects, tasks and settings are stored in a single SQLite file in your home directory:
 
 | OS | Path |
 |---|---|
 | macOS | `~/.hello_gui/tasks.db` |
 
 The folder is created on first run. To back up your tasks, copy that file. To start fresh, delete it while the app is closed.
+
+The first launch of a version with projects adds a `projects` table and a `project_id` column on tasks; your existing tasks move into a default **Inbox** project. The change only adds to the file, so an older build can still open it. Deleting a project deletes its tasks, after a confirmation that shows how many.
 
 ## Project layout
 
@@ -89,21 +93,24 @@ The code is organised as vertical slices: each feature owns its UI and logic, an
 Tickoff/
 ├── App/                  the shell
 │   ├── TickoffApp.swift      app entry point and scenes (main window, Settings)
-│   ├── AppModel.swift        owns the database and loaded tasks, routes outcomes
-│   ├── ContentView.swift     sidebar/detail layout, edit sheet, menu-command routing
+│   ├── AppModel.swift        owns the database, loaded tasks and projects, the selected project, routes outcomes
+│   ├── ContentView.swift     sidebar/detail layout, edit and project sheets, menu-command routing
 │   ├── AppCommands.swift     menu bar commands and the About panel
 │   └── ErrorBanner.swift     database error banner
 ├── Features/             one folder per feature
 │   ├── AddTask/              quick-add bar
 │   ├── EditTask/             edit sheet and validation
-│   ├── Filters/              sidebar: filters, progress, clear completed
+│   ├── Filters/              sidebar: status filters, progress, clear completed
+│   ├── Projects/             sidebar Projects section, project sheet and draft
 │   ├── Settings/             Settings window and its persistence
 │   └── TaskList/             header, search, task cards, due labels
 ├── Shared/               used by more than one feature
 │   ├── AppDatabase.swift     opens the database and runs migrations
 │   ├── TaskStore.swift       every SQL statement for tasks
 │   ├── Task.swift            Task, Status and Priority types
-│   ├── TaskSet.swift         the loaded tasks plus cached search keys and counts
+│   ├── Project.swift         Project, ProjectScope and ProjectError types
+│   ├── ProjectStore.swift    every SQL statement for projects
+│   ├── TaskSet.swift         the loaded tasks plus cached search keys and per-project counts
 │   ├── Outcome.swift         how features report success or failure to the shell
 │   └── Theme.swift           appearance preferences, accent colours, text scaling
 └── Resources/            asset catalog (app icon, accent colour)
