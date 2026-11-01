@@ -61,7 +61,7 @@ struct TaskStoreTests {
 
         let edited = Task(
             id: id, title: "new", notes: "details", priority: .high, status: .inProgress,
-            due: "2026-12-01")
+            due: "2026-12-01", projectID: Project.inboxID)
         #expect(try store.update(edited) == 1)
 
         #expect(try store.loadAll() == [edited])
@@ -70,7 +70,8 @@ struct TaskStoreTests {
     @Test func updateOfAMissingTaskChangesNothing() throws {
         let (store, _) = try makeStore()
         let ghost = Task(
-            id: 42, title: "ghost", notes: "", priority: .medium, status: .todo, due: "")
+            id: 42, title: "ghost", notes: "", priority: .medium, status: .todo, due: "",
+            projectID: Project.inboxID)
 
         #expect(try store.update(ghost) == 0)
         #expect(try store.loadAll().isEmpty)
@@ -110,5 +111,32 @@ struct TaskStoreTests {
         let task = try #require(store.loadAll().first)
         #expect(task.status == .todo)
         #expect(task.priority == .medium)
+    }
+
+    @Test func insertWithoutAProjectUsesInbox() throws {
+        let (store, _) = try makeStore()
+        try store.insert(title: "loose", priority: .medium)
+
+        #expect(try store.loadAll().map(\.projectID) == [Project.inboxID])
+    }
+
+    @Test func insertStoresTheGivenProject() throws {
+        let (store, database) = try makeStore()
+        let work = try ProjectStore(database: database).create(name: "Work")
+        try store.insert(title: "report", priority: .medium, projectID: work)
+
+        #expect(try store.loadAll().map(\.projectID) == [work])
+    }
+
+    @Test func updateMovesATaskToAnotherProject() throws {
+        let (store, database) = try makeStore()
+        let work = try ProjectStore(database: database).create(name: "Work")
+        let id = try store.insert(title: "report", priority: .medium)
+        var task = try #require(try store.loadAll().first { $0.id == id })
+
+        task.projectID = work
+        try store.update(task)
+
+        #expect(try store.loadAll().first?.projectID == work)
     }
 }

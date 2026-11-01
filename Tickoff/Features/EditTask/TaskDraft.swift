@@ -9,6 +9,8 @@ struct TaskDraft: Equatable {
     var status: Status
     var hasDue: Bool
     var dueDate: Date
+    /// Carried through untouched until the edit sheet lets the user move a task (#7).
+    var projectID: Int64
 
     struct ValidationError: Error, Equatable {
         var message: String
@@ -16,6 +18,7 @@ struct TaskDraft: Equatable {
 
     init(task: Task, today: Date = .now, calendar: Calendar = .current) {
         id = task.id
+        projectID = task.projectID
         title = task.title
         notes = task.notes
         priority = task.priority
@@ -33,7 +36,8 @@ struct TaskDraft: Equatable {
         guard !trimmed.isEmpty else { throw ValidationError(message: "A task needs a title.") }
         return Task(
             id: id, title: trimmed, notes: notes, priority: priority, status: status,
-            due: hasDue ? Self.isoString(dueDate, calendar: calendar) : "")
+            due: hasDue ? Self.isoString(dueDate, calendar: calendar) : "",
+            projectID: projectID)
     }
 
     static func isoString(_ date: Date, calendar: Calendar) -> String {

@@ -13,7 +13,7 @@ struct DueLabelTests {
     private var today: Date { calendar.date(from: DateComponents(year: 2026, month: 10, day: 24)) ?? .now }
 
     private func label(_ due: String, _ status: Status = .todo) -> DueLabel? {
-        let task = Task(id: 1, title: "t", notes: "", priority: .medium, status: status, due: due)
+        let task = Task(id: 1, title: "t", notes: "", priority: .medium, status: status, due: due, projectID: Project.inboxID)
         return DueLabel(for: task, today: today, calendar: calendar, locale: Locale(identifier: "en_US"))
     }
 

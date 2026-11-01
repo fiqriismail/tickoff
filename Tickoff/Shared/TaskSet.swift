@@ -7,6 +7,8 @@ struct TaskSet: Sendable {
     /// Lower-cased title and notes of each task, for case-insensitive search.
     private var searchKeys: [String] = []
     private var counts = [Int](repeating: 0, count: Status.allCases.count)
+    /// The same per-status counts for each project id, so the sidebar can scope without scanning.
+    private var projectCounts: [Int64: [Int]] = [:]
     /// Changes every time the contents are replaced; caches key on it.
     private(set) var revision = 0
 
@@ -14,15 +16,26 @@ struct TaskSet: Sendable {
     mutating func replace(_ newItems: [Task]) {
         searchKeys = newItems.map { "\($0.title)\n\($0.notes)".lowercased() }
         counts = [Int](repeating: 0, count: Status.allCases.count)
-        for task in newItems { counts[task.status.dbValue] += 1 }
+        projectCounts = [:]
+        for task in newItems {
+            counts[task.status.dbValue] += 1
+            projectCounts[task.projectID, default: [Int](repeating: 0, count: counts.count)][
+                task.status.dbValue] += 1
+        }
         items = newItems
         revision += 1
     }
 
-    /// Number of tasks with `status`, or of all tasks when it is `nil`.
-    func count(_ status: Status?) -> Int {
-        guard let status else { return items.count }
-        return counts[status.dbValue]
+    /// Number of tasks with `status` (all statuses when `nil`), within `project` (all projects
+    /// when `nil`).
+    func count(_ status: Status?, project: Int64? = nil) -> Int {
+        guard let project else {
+            guard let status else { return items.count }
+            return counts[status.dbValue]
+        }
+        guard let perStatus = projectCounts[project] else { return 0 }
+        guard let status else { return perStatus.reduce(0, +) }
+        return perStatus[status.dbValue]
     }
 
     /// Whether task `index` contains `query`, which must already be lower-case.
