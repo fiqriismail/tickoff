@@ -15,8 +15,9 @@ A small, native task manager for macOS, written in Swift with SwiftUI and a loca
 ## Features
 
 - Add, edit, complete and delete tasks, each with a title, notes, priority (Low / Medium / High), status (To do / In progress / Done) and optional due date
-- Projects: every task belongs to one project. The sidebar scopes the list to a project (or All Projects), with a colour dot and live count per project. Create, edit, archive and delete projects from the sidebar "+" or File > New Project…; new tasks go to the selected project, and the edit sheet can move a task
-- Sidebar filters by status with live counts (within the chosen project), a progress summary and "Clear completed"
+- Projects: every task belongs to one project. The sidebar scopes the list to a project (or All Projects), with a colour dot and live count per project. Create, edit, archive and delete projects from the sidebar "+" or File > New Project…; the edit sheet can move a task
+- Quick-add: under All Projects a project menu (Inbox, your recent projects, then all projects) chooses where the task goes; inside a project, tasks go to that project
+- Sidebar filters by status with live counts (within the chosen project), a progress summary and "Clear completed" that follow the selected project
 - Search across titles and notes
 - Right-click a task for a context menu; click a status pill to move it to the next status
 - Settings: light / dark / follow-system theme, accent colour (System, Indigo, Violet, Teal, Rose, Orange), text size, compact cards, and a toggle for note previews
