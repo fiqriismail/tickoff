@@ -64,11 +64,13 @@ struct TaskStore: Sendable {
         }
     }
 
+    /// Deletes the done tasks of `project`, or of every project when it is `nil`.
     @discardableResult
-    func clearCompleted() throws -> Int {
+    func clearCompleted(project: Int64? = nil) throws -> Int {
         try database.queue.write { db in
             try db.execute(
-                sql: "DELETE FROM tasks WHERE status = ?", arguments: [Status.done.dbValue])
+                sql: "DELETE FROM tasks WHERE status = ? AND (? IS NULL OR project_id = ?)",
+                arguments: [Status.done.dbValue, project, project])
             return db.changesCount
         }
     }

@@ -204,4 +204,21 @@ struct AppModelTests {
         #expect(model.tasks.visible(status: nil, project: work, query: "").map(\.id) == [task.id])
         #expect(model.tasks.count(nil, project: Project.inboxID) == 4)
     }
+
+    @Test func projectUsedMovesItToTheFrontWithoutDuplicatesAndKeepsFive() throws {
+        let model = try seededModel()
+        for id in [1, 2, 3, 4, 5, 6] as [Int64] { model.projectUsed(id) }
+        model.projectUsed(4)
+
+        #expect(model.recentProjectIDs == [4, 6, 5, 3, 2])
+    }
+
+    @Test func recentProjectsAreSavedAndReloadedByANewModel() throws {
+        let model = try seededModel()
+        model.projectUsed(1)
+        model.projectUsed(7)
+
+        let reopened = AppModel(database: model.database)
+        #expect(reopened.recentProjectIDs == [7, 1])
+    }
 }

@@ -8,11 +8,15 @@ final class AppModel {
     let database: AppDatabase
     let taskStore: TaskStore
     let projectStore: ProjectStore
+    private let settingsStore: SettingsStore
     let settings: SettingsModel
     /// The single source of truth for tasks; features read it and never hold task data themselves.
     private(set) var tasks = TaskSet()
     /// Every project, archived ones included; the sidebar and pickers use `visibleProjects`.
     private(set) var projects: [Project] = []
+    /// Projects quick-add was last used with, most recent first (at most `recentLimit`).
+    private(set) var recentProjectIDs: [Int64] = []
+    static let recentLimit = 5
     /// What the sidebar has selected. In memory only; falls back to all projects on reload when
     /// the selected project was deleted or archived.
     private(set) var scope: ProjectScope = .all
@@ -24,7 +28,9 @@ final class AppModel {
         self.database = database
         taskStore = TaskStore(database: database)
         projectStore = ProjectStore(database: database)
-        settings = SettingsModel(store: SettingsStore(database: database))
+        settingsStore = SettingsStore(database: database)
+        settings = SettingsModel(store: settingsStore)
+        recentProjectIDs = (try? settingsStore.loadRecentProjects()) ?? []
         errorMessage = startupError
         reload()
     }
@@ -50,6 +56,17 @@ final class AppModel {
     /// that one is archived, so the picker never shows a blank selection.
     func projectChoices(for task: Task) -> [Project] {
         projects.filter { !$0.archived || $0.id == task.projectID }
+    }
+
+    /// Remembers that quick-add just put a task in `id`, so the add bar can offer it again.
+    func projectUsed(_ id: Int64) {
+        recentProjectIDs = Array(
+            ([id] + recentProjectIDs.filter { $0 != id }).prefix(Self.recentLimit))
+        do {
+            try settingsStore.saveRecentProjects(recentProjectIDs)
+        } catch {
+            errorMessage = "Couldn't save recent projects: \(error.localizedDescription)"
+        }
     }
 
     /// Ignores a project that isn't shown (deleted, archived or unknown).

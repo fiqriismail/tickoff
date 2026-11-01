@@ -35,7 +35,11 @@ struct ContentView: View {
                 edit: { editing = $0 },
                 accessory: {
                     AddTaskBar(
-                        store: model.taskStore, projectID: model.newTaskProjectID, report: model.handle, focusRequest: newTaskRequest)
+                        store: model.taskStore, projects: model.visibleProjects,
+                        recentProjectIDs: model.recentProjectIDs,
+                        defaultProjectID: model.newTaskProjectID,
+                        offersProjectChoice: model.scope == .all, report: model.handle,
+                        used: model.projectUsed, focusRequest: newTaskRequest)
                 }
             )
                 .safeAreaInset(edge: .top, spacing: 0) {

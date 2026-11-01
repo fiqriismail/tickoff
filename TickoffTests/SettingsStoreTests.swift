@@ -110,4 +110,24 @@ struct SettingsStoreTests {
         }
         #expect(count == 5)
     }
+
+    @Test func recentProjectsRoundTripInOrderAndStartEmpty() throws {
+        let (store, _) = try makeStore()
+        #expect(try store.loadRecentProjects().isEmpty)
+
+        try store.saveRecentProjects([5, 2, 9])
+        #expect(try store.loadRecentProjects() == [5, 2, 9])
+        try store.saveRecentProjects([])
+        #expect(try store.loadRecentProjects().isEmpty)
+    }
+
+    @Test func unreadableRecentProjectValuesAreSkipped() throws {
+        let (store, database) = try makeStore()
+        try database.queue.write { db in
+            try db.execute(
+                sql: "INSERT INTO settings (key, value) VALUES ('recent_projects', '3,abc,,7')")
+        }
+
+        #expect(try store.loadRecentProjects() == [3, 7])
+    }
 }

@@ -49,5 +49,26 @@ struct SettingsStore: Sendable {
         }
     }
 
+    /// Project ids last used by quick-add, most recent first, stored under `recent_projects` as
+    /// comma-separated numbers. Anything unreadable is skipped.
+    func loadRecentProjects() throws -> [Int64] {
+        let value = try database.queue.read { db in
+            try String.fetchOne(
+                db, sql: "SELECT value FROM settings WHERE key = 'recent_projects'")
+        }
+        return (value ?? "").split(separator: ",").compactMap { Int64($0) }
+    }
+
+    func saveRecentProjects(_ ids: [Int64]) throws {
+        try database.queue.write { db in
+            try db.execute(
+                sql: """
+                    INSERT INTO settings (key, value) VALUES ('recent_projects', ?)
+                    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+                    """,
+                arguments: [ids.map(String.init).joined(separator: ",")])
+        }
+    }
+
     private static func boolKey(_ value: Bool) -> String { value ? "true" : "false" }
 }

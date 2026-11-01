@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The sidebar: shell-supplied project rows above the status filters (counted within the chosen
-/// project), a progress summary and "Clear completed". It owns the `List`, so it also reconciles
+/// project), and a progress summary and "Clear completed" for that same project. It owns the `List`, so it also reconciles
 /// the project and filter choices into the one selection the List reports.
 struct FiltersView<Projects: View>: View {
     let tasks: TaskSet
@@ -20,7 +20,7 @@ struct FiltersView<Projects: View>: View {
                 ForEach(Filter.allCases, id: \.self) { filter in
                     Label(filter.label, systemImage: filter.symbol)
                         .badge(tasks.count(filter.status, project: scope.projectID))
-                        .tag(filter)
+                        .tag(AnyHashable(filter))
                 }
             }
         }
@@ -49,7 +49,7 @@ struct FiltersView<Projects: View>: View {
             isPresented: $confirmingClear
         ) {
             Button("Clear Completed", role: .destructive) {
-                report(Outcome.run { try store.clearCompleted() })
+                report(Outcome.run { try store.clearCompleted(project: scope.projectID) })
             }
         } message: {
             Text("They will be deleted permanently.")
@@ -66,6 +66,7 @@ struct FiltersView<Projects: View>: View {
             })
     }
 
-    private var total: Int { tasks.count(nil) }
-    private var done: Int { tasks.count(.done) }
+    // Progress follows the chosen project, so it always matches the counts above it.
+    private var total: Int { tasks.count(nil, project: scope.projectID) }
+    private var done: Int { tasks.count(.done, project: scope.projectID) }
 }

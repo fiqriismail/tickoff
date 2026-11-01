@@ -3,7 +3,9 @@ import SwiftUI
 /// The sidebar's PROJECTS section: an "All Projects" row and one row per project with its colour
 /// dot and task count, a "+" in the header, and edit / archive / delete on each row's context
 /// menu. It is a `Section` meant to sit inside the sidebar `List`, which owns the selection; rows
-/// are tagged with `ProjectScope`. The shell presents the editor sheet, so this only asks for it.
+/// are tagged with `ProjectScope` boxed as `AnyHashable`, because the List's selection is a
+/// `Set<AnyHashable>` and SwiftUI only matches a tag whose type equals the selection's element type.
+/// The shell presents the editor sheet, so this only asks for it.
 struct ProjectsSection: View {
     let projects: [Project]
     let tasks: TaskSet
@@ -18,7 +20,7 @@ struct ProjectsSection: View {
         Section {
             Label("All Projects", systemImage: "square.stack.3d.up")
                 .badge(tasks.count(nil))
-                .tag(ProjectScope.all)
+                .tag(AnyHashable(ProjectScope.all))
             ForEach(projects) { project in
                 Label {
                     Text(project.name)
@@ -26,7 +28,7 @@ struct ProjectsSection: View {
                     Image(systemName: "circle.fill").foregroundStyle(project.colour.color)
                 }
                 .badge(tasks.count(nil, project: project.id))
-                .tag(ProjectScope.project(project.id))
+                .tag(AnyHashable(ProjectScope.project(project.id)))
                 .contextMenu { menu(for: project) }
             }
         } header: {
@@ -37,6 +39,8 @@ struct ProjectsSection: View {
                     .labelStyle(.iconOnly)
                     .buttonStyle(.borderless)
                     .help("New project")
+                    // Lines the plus up with the count badges instead of the sidebar's edge.
+                    .padding(.trailing, 14)
             }
         }
         .confirmationDialog(
