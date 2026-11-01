@@ -22,7 +22,8 @@ struct ContentView: View {
             .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 300)
         } detail: {
             TaskListView(
-                tasks: model.tasks, filter: filter, appearance: model.settings.appearance,
+                tasks: model.tasks, filter: filter, scope: model.scope, projects: model.projects,
+                appearance: model.settings.appearance,
                 store: model.taskStore, report: model.handle,
                 searchRequest: findRequest,
                 edit: { editing = $0 },

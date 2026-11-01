@@ -5,6 +5,8 @@ import SwiftUI
 struct TaskCard: View {
     let task: Task
     let appearance: Appearance
+    /// The task's project, given only when the list spans all projects (otherwise it is implied).
+    let project: Project?
     let setStatus: (Status) -> Void
     let edit: () -> Void
     let delete: () -> Void
@@ -84,6 +86,8 @@ struct TaskCard: View {
             .accessibilityLabel("Status: \(task.status.label)")
             .accessibilityHint("Moves the task to \(task.status.next.label)")
 
+            if let project { projectPill(project) }
+
             Pill(text: task.priority.label, style: AnyShapeStyle(task.priority.color), font: appearance.font(0.8, weight: .medium))
 
             if let due = DueLabel(for: task) {
@@ -92,6 +96,21 @@ struct TaskCard: View {
                     .foregroundStyle(due.tone.style)
             }
         }
+    }
+
+    /// Colour dot and name; muted when the project is archived.
+    private func projectPill(_ project: Project) -> some View {
+        HStack(spacing: 5) {
+            Circle().fill(project.colour.color).frame(width: 7, height: 7)
+            Text(project.name).lineLimit(1)
+        }
+        .font(appearance.font(0.8, weight: .medium))
+        .foregroundStyle(project.archived ? .tertiary : .secondary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(Capsule().fill(.quaternary))
+        .opacity(project.archived ? 0.7 : 1)
+        .accessibilityLabel("Project: \(project.name)\(project.archived ? ", archived" : "")")
     }
 
     /// Only the first line, so a long note never makes the cards uneven.
