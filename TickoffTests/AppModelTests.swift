@@ -111,4 +111,60 @@ struct AppModelTests {
         #expect(model.tasks.count(nil, project: Project.inboxID) == 3)
         #expect(model.tasks.count(.done, project: work) == 2)
     }
+
+    @Test func startsScopedToAllProjectsAndListsVisibleProjects() throws {
+        let model = try seededModel()
+        let store = model.projectStore
+        let old = try store.create(name: "Old")
+        try store.setArchived(id: old, true)
+        try store.create(name: "Work")
+        model.reload()
+
+        #expect(model.scope == .all)
+        #expect(model.visibleProjects.map(\.name) == ["Inbox", "Work"])
+    }
+
+    @Test func selectingAProjectUpdatesTheScope() throws {
+        let model = try seededModel()
+        let work = try model.projectStore.create(name: "Work")
+        model.reload()
+
+        model.select(.project(work))
+        #expect(model.scope == .project(work))
+    }
+
+    @Test func selectingAnUnknownOrArchivedProjectIsIgnored() throws {
+        let model = try seededModel()
+        let old = try model.projectStore.create(name: "Old")
+        try model.projectStore.setArchived(id: old, true)
+        model.reload()
+
+        model.select(.project(old))
+        model.select(.project(999))
+        #expect(model.scope == .all)
+    }
+
+    @Test func theScopeFallsBackToAllProjectsWhenItsProjectIsDeleted() throws {
+        let model = try seededModel()
+        let work = try model.projectStore.create(name: "Work")
+        model.reload()
+        model.select(.project(work))
+
+        try model.projectStore.delete(id: work)
+        model.reload()
+
+        #expect(model.scope == .all)
+    }
+
+    @Test func theScopeFallsBackToAllProjectsWhenItsProjectIsArchived() throws {
+        let model = try seededModel()
+        let work = try model.projectStore.create(name: "Work")
+        model.reload()
+        model.select(.project(work))
+
+        try model.projectStore.setArchived(id: work, true)
+        model.reload()
+
+        #expect(model.scope == .all)
+    }
 }

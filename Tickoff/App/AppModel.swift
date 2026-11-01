@@ -7,9 +7,15 @@ import Observation
 final class AppModel {
     let database: AppDatabase
     let taskStore: TaskStore
+    let projectStore: ProjectStore
     let settings: SettingsModel
     /// The single source of truth for tasks; features read it and never hold task data themselves.
     private(set) var tasks = TaskSet()
+    /// Every project, archived ones included; the sidebar and pickers use `visibleProjects`.
+    private(set) var projects: [Project] = []
+    /// What the sidebar has selected. In memory only; falls back to all projects on reload when
+    /// the selected project was deleted or archived.
+    private(set) var scope: ProjectScope = .all
     /// Shown in the banner; set by a failed command or load, or at startup if the real database
     /// couldn't be opened and we fell back to a temporary one.
     private(set) var errorMessage: String?
@@ -17,6 +23,7 @@ final class AppModel {
     init(database: AppDatabase, startupError: String? = nil) {
         self.database = database
         taskStore = TaskStore(database: database)
+        projectStore = ProjectStore(database: database)
         settings = SettingsModel(store: SettingsStore(database: database))
         errorMessage = startupError
         reload()
@@ -24,10 +31,24 @@ final class AppModel {
 
     func reload() {
         do {
+            projects = try projectStore.loadAll()
             tasks.replace(try taskStore.loadAll())
         } catch {
             errorMessage = error.localizedDescription
         }
+        if case .project(let id) = scope, !visibleProjects.contains(where: { $0.id == id }) {
+            scope = .all
+        }
+    }
+
+    var visibleProjects: [Project] { projects.filter { !$0.archived } }
+
+    /// Ignores a project that isn't shown (deleted, archived or unknown).
+    func select(_ newScope: ProjectScope) {
+        if case .project(let id) = newScope, !visibleProjects.contains(where: { $0.id == id }) {
+            return
+        }
+        scope = newScope
     }
 
     /// Records the outcome of a task change and reloads the tasks.

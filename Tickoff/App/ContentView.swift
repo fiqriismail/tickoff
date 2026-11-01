@@ -13,8 +13,11 @@ struct ContentView: View {
     var body: some View {
         NavigationSplitView {
             FiltersView(
-                tasks: model.tasks, selection: $filter, store: model.taskStore,
-                report: model.handle
+                tasks: model.tasks,
+                scope: Binding(get: { model.scope }, set: { model.select($0) }),
+                filter: $filter,
+                projects: { ProjectsSection(projects: model.visibleProjects, tasks: model.tasks) },
+                store: model.taskStore, report: model.handle
             )
             .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 300)
         } detail: {
