@@ -72,6 +72,11 @@ struct TaskStore: Sendable {
         }
     }
 
+    /// Runs inside the caller's transaction so `ProjectStore.delete` removes tasks and project together.
+    static func deleteTasks(inProject projectID: Int64, in db: Database) throws {
+        try db.execute(sql: "DELETE FROM tasks WHERE project_id = ?", arguments: [projectID])
+    }
+
     // Reads each column leniently (a bad value falls back instead of trapping), because the
     // file may have been written by an older build or edited by hand.
     private static func task(from row: Row) -> Task {
