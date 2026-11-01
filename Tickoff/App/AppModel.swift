@@ -43,6 +43,15 @@ final class AppModel {
 
     var visibleProjects: [Project] { projects.filter { !$0.archived } }
 
+    /// Where a quick-added task goes: the selected project, or Inbox under All Projects.
+    var newTaskProjectID: Int64 { scope.projectID ?? Project.inboxID }
+
+    /// What the edit sheet's picker offers: the visible projects, plus the task's own project if
+    /// that one is archived, so the picker never shows a blank selection.
+    func projectChoices(for task: Task) -> [Project] {
+        projects.filter { !$0.archived || $0.id == task.projectID }
+    }
+
     /// Ignores a project that isn't shown (deleted, archived or unknown).
     func select(_ newScope: ProjectScope) {
         if case .project(let id) = newScope, !visibleProjects.contains(where: { $0.id == id }) {

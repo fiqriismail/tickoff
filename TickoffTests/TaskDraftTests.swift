@@ -51,4 +51,14 @@ struct TaskDraftTests {
         let task = try edited.validated(calendar: calendar)
         #expect(task == Task(id: 9, title: "b", notes: "n", priority: .high, status: .inProgress, due: "", projectID: 1))
     }
+
+    @Test func theProjectChosenInTheDraftIsWhatGetsSaved() throws {
+        var draft = TaskDraft(
+            task: Task(
+                id: 1, title: "t", notes: "", priority: .medium, status: .todo, due: "",
+                projectID: 1))
+        draft.projectID = 4
+
+        #expect(try draft.validated().projectID == 4)
+    }
 }

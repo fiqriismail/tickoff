@@ -1,8 +1,11 @@
 import SwiftUI
 
-/// The quick-add bar above the task list: a title and a priority; Enter adds a To do task.
+/// The quick-add bar above the task list: a title and a priority; Enter adds a To do task to
+/// the project the shell passes in.
 struct AddTaskBar: View {
     let store: TaskStore
+    /// Where new tasks go; the shell resolves it from the sidebar selection.
+    let projectID: Int64
     let report: (Outcome) -> Void
     /// Changes when the shell wants the title field focused (New Task).
     let focusRequest: Int
@@ -34,7 +37,7 @@ struct AddTaskBar: View {
     private func add() {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        let outcome = Outcome.run { try store.insert(title: trimmed, priority: priority) }
+        let outcome = Outcome.run { try store.insert(title: trimmed, priority: priority, projectID: projectID) }
         if outcome == .changed { title = "" }
         report(outcome)
         focused = true
