@@ -6,6 +6,9 @@ import SwiftUI
 struct TaskListView<Accessory: View>: View {
     let tasks: TaskSet
     let filter: Filter
+    let scope: ProjectScope
+    /// Every project, archived ones included: an archived project's tasks still show under All.
+    let projects: [Project]
     let appearance: Appearance
     let store: TaskStore
     let report: (Outcome) -> Void
@@ -35,7 +38,8 @@ struct TaskListView<Accessory: View>: View {
     }
 
     var body: some View {
-        let visible = cache.tasks(in: tasks, status: filter.status, query: query)
+        let visible = cache.tasks(
+            in: tasks, status: filter.status, project: scope.projectID, query: query)
         VStack(spacing: 0) {
             accessory()
                 .padding(.horizontal, Self.margin)
@@ -49,7 +53,7 @@ struct TaskListView<Accessory: View>: View {
         }
         .frame(maxHeight: .infinity, alignment: .top)
         // Title and search live in the window toolbar, like System Settings.
-        .navigationTitle(filter.label)
+        .navigationTitle(scopedProject?.name ?? filter.label)
         .navigationSubtitle(subtitle(count: visible.count))
         .toolbar {
             ToolbarItem(placement: .primaryAction) { searchField }
@@ -64,9 +68,19 @@ struct TaskListView<Accessory: View>: View {
         .onChange(of: searchFocused) { collapseSearch() }
     }
 
+    private var scopedProject: Project? {
+        scope.projectID.flatMap { id in projects.first { $0.id == id } }
+    }
+
+    /// Cards name their project only when the list spans all of them.
+    private var projectsByID: [Int64: Project]? {
+        scope == .all ? Dictionary(uniqueKeysWithValues: projects.map { ($0.id, $0) }) : nil
+    }
+
     private func subtitle(count: Int) -> String {
         let date = Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide))
-        return "\(count) \(count == 1 ? "task" : "tasks") · \(date)"
+        let status = scopedProject != nil && filter != .all ? "\(filter.label) · " : ""
+        return "\(status)\(count) \(count == 1 ? "task" : "tasks") · \(date)"
     }
 
     private func openSearch() {
@@ -118,9 +132,11 @@ struct TaskListView<Accessory: View>: View {
     /// A `List` is backed by a recycling table, so only the rows on screen exist however many tasks
     /// there are.
     private func list(_ visible: [Task]) -> some View {
-        List(visible) { task in
+        let projectsByID = projectsByID
+        return List(visible) { task in
             TaskCard(
                 task: task, appearance: appearance,
+                project: projectsByID?[task.projectID],
                 setStatus: { status in
                     report(Outcome.run { try store.setStatus(id: task.id, to: status) })
                 },
@@ -142,10 +158,15 @@ struct TaskListView<Accessory: View>: View {
     @ViewBuilder private var emptyState: some View {
         if searching {
             ContentUnavailableView.search(text: query.trimmingCharacters(in: .whitespacesAndNewlines))
-        } else if tasks.count(nil) == 0 {
+        } else if tasks.count(nil, project: scope.projectID) == 0 {
             ContentUnavailableView(
-                "No tasks yet", systemImage: "checklist",
+                scopedProject == nil ? "No tasks yet" : "No tasks in \(scopedProject?.name ?? "")",
+                systemImage: "checklist",
                 description: Text("Add your first one to get started."))
+        } else if let project = scopedProject {
+            ContentUnavailableView(
+                "Nothing here yet", systemImage: "party.popper",
+                description: Text("No \(filter.label.lowercased()) tasks in \(project.name)."))
         } else {
             ContentUnavailableView("Nothing here yet", systemImage: "party.popper")
         }
@@ -161,13 +182,14 @@ private final class VisibleCache {
     private struct Key: Equatable {
         var revision: Int
         var status: Status?
+        var project: Int64?
         var query: String
     }
 
-    func tasks(in set: TaskSet, status: Status?, query: String) -> [Task] {
-        let wanted = Key(revision: set.revision, status: status, query: query)
+    func tasks(in set: TaskSet, status: Status?, project: Int64?, query: String) -> [Task] {
+        let wanted = Key(revision: set.revision, status: status, project: project, query: query)
         if wanted != key {
-            result = set.visible(status: status, query: query)
+            result = set.visible(status: status, project: project, query: query)
             key = wanted
         }
         return result

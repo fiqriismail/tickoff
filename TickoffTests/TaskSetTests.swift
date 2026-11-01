@@ -70,4 +70,18 @@ struct TaskSetTests {
         #expect(set.count(nil, project: 2) == 0)
         #expect(set.count(nil, project: 1) == 1)
     }
+
+    @Test func visibleCanBeScopedToOneProjectAndStatusAtOnce() {
+        var set = TaskSet()
+        set.replace([
+            make("a eggs", .todo, project: 1), make("b eggs", .done, project: 2),
+            make("c eggs", .todo, project: 2), make("d milk", .todo, project: 2),
+        ])
+
+        #expect(set.visible(status: nil, project: 2, query: "").map(\.title) == ["b eggs", "c eggs", "d milk"])
+        #expect(set.visible(status: .todo, project: 2, query: "").map(\.title) == ["c eggs", "d milk"])
+        #expect(set.visible(status: .todo, project: 2, query: "eggs").map(\.title) == ["c eggs"])
+        #expect(set.visible(status: nil, project: 3, query: "").isEmpty)
+        #expect(set.visible(status: nil, project: nil, query: "eggs").count == 3)
+    }
 }

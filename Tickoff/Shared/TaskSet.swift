@@ -43,13 +43,14 @@ struct TaskSet: Sendable {
         query.isEmpty || searchKeys[index].contains(query)
     }
 
-    /// Tasks with `status` (all when `nil`) whose title or notes contain `query`, ignoring case
-    /// and surrounding whitespace, in load order.
-    func visible(status: Status?, query: String) -> [Task] {
+    /// Tasks with `status` (all when `nil`) in `project` (all when `nil`) whose title or notes
+    /// contain `query`, ignoring case and surrounding whitespace, in load order.
+    func visible(status: Status?, project: Int64? = nil, query: String) -> [Task] {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return items.indices.compactMap { index in
             let task = items[index]
             guard status == nil || task.status == status else { return nil }
+            guard project == nil || task.projectID == project else { return nil }
             return matches(index: index, query: needle) ? task : nil
         }
     }
