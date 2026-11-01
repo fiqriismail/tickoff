@@ -6,6 +6,7 @@ struct ContentView: View {
     let model: AppModel
     @State private var filter: Filter = .all
     @State private var editing: Task?
+    @State private var projectSheet: ProjectSheet?
     /// Bumped by menu commands; the features focus their field when it changes.
     @State private var newTaskRequest = 0
     @State private var findRequest = 0
@@ -16,7 +17,12 @@ struct ContentView: View {
                 tasks: model.tasks,
                 scope: Binding(get: { model.scope }, set: { model.select($0) }),
                 filter: $filter,
-                projects: { ProjectsSection(projects: model.visibleProjects, tasks: model.tasks) },
+                projects: {
+                    ProjectsSection(
+                        projects: model.visibleProjects, tasks: model.tasks,
+                        store: model.projectStore, report: model.handle,
+                        edit: { projectSheet = ProjectSheet(project: $0) })
+                },
                 store: model.taskStore, report: model.handle
             )
             .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 300)
@@ -43,12 +49,22 @@ struct ContentView: View {
                 task: task, store: model.taskStore, projects: model.projectChoices(for: task),
                 finish: model.handle)
         }
+        .sheet(item: $projectSheet) { sheet in
+            ProjectEditorView(
+                project: sheet.project, store: model.projectStore, finish: model.handle)
+        }
         .focusedSceneValue(
             \.appActions,
             AppActions(newTask: { newTaskRequest += 1 }, find: { findRequest += 1 })
         )
         .frame(minWidth: 720, minHeight: 480)
     }
+}
+
+/// What the project editor sheet is for; `project` is `nil` when creating.
+private struct ProjectSheet: Identifiable {
+    let project: Project?
+    var id: Int64 { project?.id ?? 0 }
 }
 
 #Preview {
