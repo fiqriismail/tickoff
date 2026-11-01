@@ -37,7 +37,8 @@ struct ContentView: View {
                     AddTaskBar(
                         store: model.taskStore, projects: model.visibleProjects,
                         recentProjectIDs: model.recentProjectIDs,
-                        defaultProjectID: model.newTaskProjectID, report: model.handle,
+                        defaultProjectID: model.newTaskProjectID,
+                        offersProjectChoice: model.scope == .all, report: model.handle,
                         used: model.projectUsed, focusRequest: newTaskRequest)
                 }
             )

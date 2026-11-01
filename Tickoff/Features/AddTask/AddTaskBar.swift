@@ -2,7 +2,8 @@ import SwiftUI
 
 /// The quick-add bar above the task list: a title, a project and a priority; Enter adds a To do
 /// task. The project starts on the shell's default (the selected project, else Inbox) and goes
-/// back to it after each add, so where a task lands is always visible and predictable.
+/// back to it after each add. The project menu only shows under All Projects, where the choice
+/// matters; inside one project the placeholder names it instead.
 struct AddTaskBar: View {
     let store: TaskStore
     /// The projects that can be chosen (not archived), supplied by the shell.
@@ -10,6 +11,8 @@ struct AddTaskBar: View {
     /// Last-used project ids, most recent first, for the menu's Recent section.
     let recentProjectIDs: [Int64]
     let defaultProjectID: Int64
+    /// False when the list is already one project, which makes the choice redundant.
+    let offersProjectChoice: Bool
     let report: (Outcome) -> Void
     /// Tells the shell which project just received a task.
     let used: (Int64) -> Void
@@ -37,7 +40,7 @@ struct AddTaskBar: View {
                 .onSubmit(add)
                 .onChange(of: focusRequest) { focused = true }
 
-            projectMenu
+            if offersProjectChoice { projectMenu }
 
             Picker("Priority", selection: $priority) {
                 ForEach(Priority.allCases, id: \.self) { Text($0.label).tag($0) }
