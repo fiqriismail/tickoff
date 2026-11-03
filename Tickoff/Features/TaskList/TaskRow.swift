@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// One task as a plain list row: completion circle, title, one-line note and a single line of
-/// metadata. Status and priority are always words; colour only reinforces them. It has no buttons
+/// metadata. Status and priority are always words in secondary text; colour only tints their symbols. It has no buttons
 /// of its own besides the circle: edit, status and delete live in the context menu and menu bar.
 struct TaskRow: View {
     let task: Task
@@ -52,11 +52,18 @@ struct TaskRow: View {
         HStack(spacing: 10) {
             Text(task.status.label)
             if let project { projectLabel(project) }
-            Text("\(task.priority.label) priority")
-                .foregroundStyle(task.priority.color)
+            // Text stays secondary so it keeps its contrast; the symbol carries the colour.
+            Label {
+                Text("\(task.priority.label) priority")
+            } icon: {
+                Image(systemName: "flag.fill").foregroundStyle(task.priority.color)
+            }
             if let due = DueLabel(for: task) {
-                Label(due.text, systemImage: "calendar")
-                    .foregroundStyle(due.tone.style)
+                Label {
+                    Text(due.text)
+                } icon: {
+                    Image(systemName: "calendar").foregroundStyle(due.tone.style)
+                }
             }
         }
         .font(.subheadline)
