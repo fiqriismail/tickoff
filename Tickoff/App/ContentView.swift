@@ -10,6 +10,7 @@ struct ContentView: View {
     /// Bumped by menu commands; the features focus their field when it changes.
     @State private var newTaskRequest = 0
     @State private var findRequest = 0
+    @State private var clearRequest = 0
 
     var body: some View {
         NavigationSplitView {
@@ -22,8 +23,7 @@ struct ContentView: View {
                         projects: model.visibleProjects, tasks: model.tasks,
                         store: model.projectStore, report: model.handle,
                         edit: { projectSheet = ProjectSheet(project: $0) })
-                },
-                store: model.taskStore, report: model.handle
+                }
             )
             .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 300)
         } detail: {
@@ -31,7 +31,8 @@ struct ContentView: View {
                 tasks: model.tasks, filter: filter, scope: model.scope, projects: model.projects,
                 appearance: model.settings.appearance,
                 store: model.taskStore, report: model.handle,
-                searchRequest: findRequest,
+                searchRequest: findRequest, clearRequest: clearRequest,
+                updateAppearance: model.settings.update,
                 edit: { editing = $0 },
                 accessory: {
                     AddTaskBar(
@@ -62,7 +63,13 @@ struct ContentView: View {
             AppActions(
                 newTask: { newTaskRequest += 1 },
                 newProject: { projectSheet = ProjectSheet(project: nil) },
-                find: { findRequest += 1 })
+                find: { findRequest += 1 },
+                clearCompleted: { clearRequest += 1 },
+                canClearCompleted: model.tasks.count(.done, project: model.scope.projectID) > 0,
+                showNotes: model.settings.appearance.showNotes,
+                compactRows: model.settings.appearance.compactCards,
+                setShowNotes: { value in model.settings.update { $0.showNotes = value } },
+                setCompactRows: { value in model.settings.update { $0.compactCards = value } })
         )
         .frame(minWidth: 720, minHeight: 480)
     }

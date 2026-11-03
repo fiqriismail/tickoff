@@ -7,13 +7,21 @@ struct AppActions {
     var newTask: () -> Void
     var newProject: () -> Void
     var find: () -> Void
+    var clearCompleted: () -> Void
+    /// Whether the chosen project has completed tasks to clear.
+    var canClearCompleted: Bool
+    var showNotes: Bool
+    var compactRows: Bool
+    var setShowNotes: (Bool) -> Void
+    var setCompactRows: (Bool) -> Void
 }
 
 extension FocusedValues {
     @Entry var appActions: AppActions?
 }
 
-/// The menu bar: New Task ⌘N, New Project ⇧⌘N, Find Tasks ⌘F, Hide/Show Sidebar ⌃⌘S and the About panel.
+/// The menu bar: New Task ⌘N, New Project ⇧⌘N, Clear Completed…, Find Tasks ⌘F, the Show Notes and
+/// Compact Rows toggles, Hide/Show Sidebar ⌃⌘S and the About panel. Every toolbar item has a command here.
 /// Settings ⌘, comes from the `Settings` scene, and the Edit and Window menus are the standard ones.
 struct AppCommands: Commands {
     @FocusedValue(\.appActions) private var actions
@@ -28,11 +36,21 @@ struct AppCommands: Commands {
             Button("New Project…") { actions?.newProject() }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
                 .disabled(actions == nil)
+            Divider()
+            Button("Clear Completed…") { actions?.clearCompleted() }
+                .disabled(actions?.canClearCompleted != true)
         }
 
         CommandGroup(after: .sidebar) {
             Button("Find Tasks") { actions?.find() }
                 .keyboardShortcut("f")
+                .disabled(actions == nil)
+            Divider()
+            Toggle("Show Notes", isOn: Binding(
+                get: { actions?.showNotes ?? true }, set: { actions?.setShowNotes($0) }))
+                .disabled(actions == nil)
+            Toggle("Use Compact Rows", isOn: Binding(
+                get: { actions?.compactRows ?? false }, set: { actions?.setCompactRows($0) }))
                 .disabled(actions == nil)
         }
 
