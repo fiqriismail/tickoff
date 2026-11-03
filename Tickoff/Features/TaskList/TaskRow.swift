@@ -37,6 +37,9 @@ struct TaskRow: View {
             }
         }
         .padding(.vertical, compact ? 1 : 4)
+        // Without this the separator starts wherever the row's last text happens to, so it stops
+        // part way along; pin it to the row's leading edge.
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
         .accessibilityElement(children: .combine)
     }
 
