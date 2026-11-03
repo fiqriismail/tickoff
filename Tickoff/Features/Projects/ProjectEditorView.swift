@@ -53,6 +53,8 @@ struct ProjectEditorView: View {
                         .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
                         .overlay(
                             RoundedRectangle(cornerRadius: 6).strokeBorder(Color(nsColor: .separatorColor)))
+                        // Line the "Notes" label up with the first line of text, like the other rows.
+                        .alignmentGuide(.firstTextBaseline) { $0[.top] + 16.5 }
                 }
 
                 if !isNew && !draft.isInbox {
