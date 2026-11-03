@@ -40,6 +40,14 @@ struct ProjectStoreTests {
         #expect(try store.loadAll().map(\.name) == ["Inbox", "Apple", "banana", "zebra"])
     }
 
+    @Test func aProjectSavedWithEachColourReadsBackUnchanged() throws {
+        let (store, _) = try makeStore()
+        for colour in ProjectColour.allCases {
+            let id = try store.create(name: "P-\(colour.key)", colour: colour)
+            #expect(try store.loadAll().first { $0.id == id }?.colour == colour)
+        }
+    }
+
     @Test func createTrimsTheNameAndStoresColourAndNotes() throws {
         let (store, _) = try makeStore()
         let id = try store.create(name: "  Work  ", colour: .teal, notes: "day job")

@@ -1,11 +1,12 @@
 import Foundation
+import SwiftUI
 
 /// A named group of tasks. Lives in `Shared/` because the sidebar, the task list and the edit
 /// sheet all need it and features cannot import each other. Persistence is `ProjectStore`'s job.
 struct Project: Identifiable, Equatable, Sendable {
     var id: Int64
     var name: String
-    var colour: Accent
+    var colour: ProjectColour
     var notes: String
     var archived: Bool
     /// The default project every task can fall back to; it can be neither deleted nor archived.
@@ -42,6 +43,40 @@ enum ProjectScope: Hashable, Sendable {
         switch self {
         case .all: nil
         case .project(let id): id
+        }
+    }
+}
+
+/// A project's colour. The raw keys are what `projects.colour` already stores, so they must never
+/// change; the colours themselves are system colours that adapt to light and dark.
+enum ProjectColour: String, CaseIterable, Sendable {
+    case system, indigo, violet, teal, rose, orange
+
+    var label: String {
+        switch self {
+        case .system: "Accent"
+        case .indigo: "Indigo"
+        case .violet: "Purple"
+        case .teal: "Teal"
+        case .rose: "Pink"
+        case .orange: "Orange"
+        }
+    }
+
+    /// The value stored in `projects.colour`.
+    var key: String { rawValue }
+
+    init?(key: String) { self.init(rawValue: key) }
+
+    /// `.system` follows the accent chosen in System Settings.
+    var color: Color {
+        switch self {
+        case .system: .accentColor
+        case .indigo: .indigo
+        case .violet: .purple
+        case .teal: .teal
+        case .rose: .pink
+        case .orange: .orange
         }
     }
 }

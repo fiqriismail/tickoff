@@ -34,8 +34,8 @@ struct ProjectEditorView: View {
 
             field("Colour") {
                 HStack(spacing: 10) {
-                    ForEach(Accent.allCases, id: \.self) { accent in
-                        swatch(accent)
+                    ForEach(ProjectColour.allCases, id: \.self) { colour in
+                        swatch(colour)
                     }
                 }
             }
@@ -73,7 +73,7 @@ struct ProjectEditorView: View {
         .onAppear { nameFocused = true }
     }
 
-    private func swatch(_ accent: Accent) -> some View {
+    private func swatch(_ accent: ProjectColour) -> some View {
         Button { draft.colour = accent } label: {
             Circle().fill(accent.color).frame(width: 20, height: 20)
                 .overlay(Circle().strokeBorder(.primary, lineWidth: draft.colour == accent ? 2 : 0).padding(-4))

@@ -14,15 +14,8 @@ struct TickoffApp: App {
     var body: some Scene {
         Window("Tickoff", id: "main") {
             ContentView(model: model)
-                .applying(model.settings.appearance)
         }
         .windowToolbarStyle(.unified)
         .commands { AppCommands() }
-
-        Settings {
-            SettingsView(model: model.settings)
-                .applying(model.settings.appearance)
-        }
-        .windowResizability(.contentSize)
     }
 }

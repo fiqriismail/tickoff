@@ -52,7 +52,7 @@ The app is split into three layers with strict dependency rules:
 Tickoff/
   App/                 # the SHELL: owns the database + TaskSet, lays out the window,
                        # routes menu commands and feature Outcomes. No feature logic here.
-    TickoffApp.swift       entry point, scenes (main window, Settings), app delegate
+    TickoffApp.swift       entry point, the main window scene, app delegate
     AppModel.swift         database, stores, SettingsModel, TaskSet, projects + selected scope,
                            error banner state
     ContentView.swift      NavigationSplitView, edit sheet, menu-command routing
@@ -68,7 +68,7 @@ Tickoff/
     ProjectStore.swift     the ONE place that talks SQL about the `projects` table
     TaskSet.swift          loaded tasks plus cached search keys and counts (also per project)
     Outcome.swift          what a feature reports back to the shell
-    Theme.swift            appearance preferences, accent colours, text scaling
+    Theme.swift            display options (Show Notes, Compact Rows)
   Resources/           # asset catalog
 TickoffTests/          # Swift Testing suites, one per type under test
 packaging/macos/       # release.sh, make_icon.swift
@@ -138,7 +138,8 @@ done once per change:
 
 - The data file is `~/.hello_gui/tasks.db`, shared with the Rust-era app: tables `tasks`,
   `projects` (added by migration `v2`, Inbox is id 1) and `settings`, status and priority as integer codes, due as `YYYY-MM-DD` or `''`,
-  settings keys `theme_mode`, `accent`, `ui_scale`, `compact_cards`, `show_notes`.
+  settings keys `compact_cards` and `show_notes` (older builds also wrote `theme_mode`, `accent`
+  and `ui_scale`; those rows are left in the file, never read, never deleted).
 - The schema lives in `AppDatabase.migrator` (GRDB `DatabaseMigrator`). `v1` uses
   `CREATE TABLE IF NOT EXISTS` so an existing file is adopted untouched. Add new
   migrations as new `registerMigration` entries; they must be additive and
@@ -151,10 +152,14 @@ done once per change:
 
 ### Theming and UI
 
-- Never hard-code colours in features. Use semantic styles (`.primary`, `.secondary`,
-  `.tint`) and the helpers in `Theme.swift` so the active light/dark theme and accent
-  apply automatically. Note `.tint` follows the chosen accent; `Color.accentColor` does not.
-- Text size goes through `Appearance.font(_:weight:)` so the Text size setting applies.
+- Follow the system: no in-app theme, accent or text size. Never hard-code colours in
+  features; use semantic styles (`.primary`, `.secondary`, `.tint`) so light/dark and the
+  System Settings accent apply automatically. Project colours are `ProjectColour` (system
+  colours, stored keys never change).
+- Text uses the built-in styles (`.title3`, `.title2`, `.body`, `.callout`, `.subheadline`),
+  never below 10pt.
+- There is no Settings window; options that show or hide parts of a view live in that view
+  (the toolbar More menu) and the menu bar.
 - Reusable visual pieces live next to the feature that uses them until a second feature
   needs them.
 - The window is a single `Window` scene with a unified toolbar, like System Settings: the

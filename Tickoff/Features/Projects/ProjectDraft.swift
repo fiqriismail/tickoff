@@ -6,7 +6,7 @@ struct ProjectDraft: Equatable {
     /// `nil` while creating.
     var id: Int64?
     var name: String
-    var colour: Accent
+    var colour: ProjectColour
     var notes: String
     var archived: Bool
     var isInbox: Bool

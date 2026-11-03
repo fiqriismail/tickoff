@@ -1,6 +1,6 @@
 import Observation
 
-/// Holds the current appearance, applies edits immediately and saves each one.
+/// Holds the current display options, applies edits immediately and saves each one.
 @MainActor @Observable
 final class SettingsModel {
     private(set) var appearance: Appearance
@@ -26,10 +26,6 @@ final class SettingsModel {
         guard edited != appearance else { return }
         appearance = edited
         save()
-    }
-
-    func resetToDefaults() {
-        update { $0 = .default }
     }
 
     private func save() {

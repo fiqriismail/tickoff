@@ -4,8 +4,7 @@ import Testing
 @testable import Tickoff
 
 struct SettingsStoreTests {
-    private let custom = Appearance(
-        mode: .light, accent: .teal, compactCards: true, showNotes: false)
+    private let custom = Appearance(compactCards: true, showNotes: false)
 
     private func makeStore() throws -> (SettingsStore, AppDatabase) {
         let database = try AppDatabase()
@@ -17,10 +16,8 @@ struct SettingsStoreTests {
         #expect(try store.load() == .default)
     }
 
-    @Test func theDefaultsAreSystemSystemCompactOffNotesOn() {
+    @Test func theDefaultsAreCompactOffNotesOn() {
         let defaults = Appearance.default
-        #expect(defaults.mode == .system)
-        #expect(defaults.accent == .system)
         #expect(defaults.compactCards == false)
         #expect(defaults.showNotes == true)
     }
@@ -55,17 +52,17 @@ struct SettingsStoreTests {
             try db.execute(
                 sql: """
                     INSERT INTO settings VALUES
-                        ('theme_mode', 'neon'), ('mystery', 'x'), ('accent', 'rose'),
+                        ('theme_mode', 'neon'), ('mystery', 'x'), ('compact_cards', 'maybe'),
                         ('ui_scale', 'huge')
                     """)
         }
 
         let loaded = try store.load()
-        #expect(loaded.mode == Appearance.default.mode)
-        #expect(loaded.accent == .rose)
+        #expect(loaded.compactCards == false)
+        #expect(loaded.showNotes == Appearance.default.showNotes)
     }
 
-    @Test func settingsWrittenByTheRustAppLoadUnchanged() throws {
+    @Test func settingsWrittenByOlderBuildsLoadAndTheRetiredKeysAreIgnored() throws {
         let (store, database) = try makeStore()
         try database.queue.write { db in
             try db.execute(
@@ -79,11 +76,10 @@ struct SettingsStoreTests {
         #expect(
             try store.load()
                 == Appearance(
-                    mode: .dark, accent: .orange, compactCards: true,
-                    showNotes: false))
+                    compactCards: true, showNotes: false))
     }
 
-    @Test func savingWritesTheKeysAndValuesTheRustAppReads() throws {
+    @Test func savingWritesTheKeysAndValuesOlderBuildsRead() throws {
         let (store, database) = try makeStore()
         try store.save(custom)
 
@@ -91,10 +87,7 @@ struct SettingsStoreTests {
             try Row.fetchAll(db, sql: "SELECT key, value FROM settings ORDER BY key")
                 .map { "\($0[0] as String)=\($0[1] as String)" }
         }
-        #expect(
-            stored == [
-                "accent=teal", "compact_cards=true", "show_notes=false", "theme_mode=light",
-            ])
+        #expect(stored == ["compact_cards=true", "show_notes=false"])
     }
 
     @Test func savingTwiceKeepsOneRowPerKey() throws {
@@ -105,7 +98,7 @@ struct SettingsStoreTests {
         let count = try database.queue.read { db in
             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM settings")
         }
-        #expect(count == 4)
+        #expect(count == 2)
     }
 
     @Test func recentProjectsRoundTripInOrderAndStartEmpty() throws {
@@ -140,5 +133,24 @@ struct SettingsStoreTests {
             try String.fetchOne(db, sql: "SELECT value FROM settings WHERE key = 'ui_scale'")
         }
         #expect(kept == "large")
+    }
+}
+
+extension SettingsStoreTests {
+    @Test func retiredThemeAndAccentRowsAreLeftUntouchedBySaving() throws {
+        let (store, database) = try makeStore()
+        try database.queue.write { db in
+            try db.execute(
+                sql: "INSERT INTO settings VALUES ('theme_mode', 'dark'), ('accent', 'orange')")
+        }
+
+        try store.save(custom)
+
+        let kept = try database.queue.read { db in
+            try Row.fetchAll(
+                db, sql: "SELECT key, value FROM settings WHERE key IN ('theme_mode','accent') ORDER BY key"
+            ).map { "\($0[0] as String)=\($0[1] as String)" }
+        }
+        #expect(kept == ["accent=orange", "theme_mode=dark"])
     }
 }
