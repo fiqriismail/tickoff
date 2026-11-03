@@ -13,14 +13,19 @@ struct FiltersView<Projects: View>: View {
     var body: some View {
         List(selection: selection) {
             projects()
-            Section("Library") {
+            Section {
                 ForEach(Filter.allCases, id: \.self) { filter in
                     Label(filter.label, systemImage: filter.symbol)
+                        .padding(.vertical, 2)
                         .badge(tasks.count(filter.status, project: scope.projectID))
                         .tag(AnyHashable(filter))
                 }
+            } header: {
+                Text("Library").padding(.top, 8).padding(.bottom, 2)
             }
         }
+        // A little air between the window controls and the first header.
+        .safeAreaPadding(.top, 8)
     }
 
     private var selection: Binding<Set<AnyHashable>> {

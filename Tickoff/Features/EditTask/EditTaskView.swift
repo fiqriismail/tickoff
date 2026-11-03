@@ -23,49 +23,55 @@ struct EditTaskView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 20) {
             Text("Edit Task").font(.title2)
 
             // The columns style puts right-aligned labels in a leading column, controls in the second.
             Form {
-                TextField("Title", text: $draft.title)
-                    .focused($titleFocused)
-                    .onSubmit(save)
+                // Each row gets its own breathing room; the columns style packs them tightly.
+                Group {
+                    TextField("Title", text: $draft.title)
+                        .focused($titleFocused)
+                        .onSubmit(save)
 
-                LabeledContent("Notes") {
-                    TextEditor(text: $draft.notes)
-                        .font(.body)
-                        .frame(height: 90)
-                        .scrollContentBackground(.hidden)
-                        .padding(4)
-                        .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6).strokeBorder(Color(nsColor: .separatorColor)))
-                }
+                    LabeledContent("Notes") {
+                        TextEditor(text: $draft.notes)
+                            .font(.body)
+                            .frame(height: 90)
+                            .scrollContentBackground(.hidden)
+                            .padding(4)
+                            .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6).strokeBorder(Color(nsColor: .separatorColor)))
+                            // Line the "Notes" label up with the first line of text, like the other rows.
+                            .alignmentGuide(.firstTextBaseline) { $0[.top] + 16.5 }
+                    }
 
-                Picker("Status", selection: $draft.status) {
-                    ForEach(Status.allCases, id: \.self) { Text($0.label).tag($0) }
-                }
-                .fixedSize()
+                    Picker("Status", selection: $draft.status) {
+                        ForEach(Status.allCases, id: \.self) { Text($0.label).tag($0) }
+                    }
+                    .fixedSize()
 
-                Picker("Priority", selection: $draft.priority) {
-                    ForEach(Priority.allCases, id: \.self) { Text($0.label).tag($0) }
-                }
-                .fixedSize()
+                    Picker("Priority", selection: $draft.priority) {
+                        ForEach(Priority.allCases, id: \.self) { Text($0.label).tag($0) }
+                    }
+                    .fixedSize()
 
-                Picker("Project", selection: $draft.projectID) {
-                    ForEach(projects) { Text($0.name).tag($0.id) }
-                }
-                .fixedSize()
+                    Picker("Project", selection: $draft.projectID) {
+                        ForEach(projects) { Text($0.name).tag($0.id) }
+                    }
+                    .fixedSize()
 
-                LabeledContent("Due") {
-                    HStack {
-                        Toggle("Due date", isOn: $draft.hasDue)
-                        DatePicker("Due date", selection: $draft.dueDate, displayedComponents: .date)
-                            .labelsHidden()
-                            .disabled(!draft.hasDue)
+                    LabeledContent("Due") {
+                        HStack {
+                            Toggle("Due date", isOn: $draft.hasDue)
+                            DatePicker("Due date", selection: $draft.dueDate, displayedComponents: .date)
+                                .labelsHidden()
+                                .disabled(!draft.hasDue)
+                        }
                     }
                 }
+                .padding(.vertical, 4)
             }
             .formStyle(.columns)
 
@@ -81,7 +87,7 @@ struct EditTaskView: View {
                     .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(20)
+        .padding(24)
         .frame(width: 440)
         .onAppear { titleFocused = true }
     }

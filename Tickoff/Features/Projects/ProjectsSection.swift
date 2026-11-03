@@ -19,6 +19,7 @@ struct ProjectsSection: View {
     var body: some View {
         Section {
             Label("All Projects", systemImage: "square.stack.3d.up")
+                .padding(.vertical, 2)
                 .badge(tasks.count(nil))
                 .tag(AnyHashable(ProjectScope.all))
             ForEach(projects) { project in
@@ -27,6 +28,7 @@ struct ProjectsSection: View {
                 } icon: {
                     Image(systemName: "circle.fill").foregroundStyle(project.colour.color)
                 }
+                .padding(.vertical, 2)
                 .badge(tasks.count(nil, project: project.id))
                 .tag(AnyHashable(ProjectScope.project(project.id)))
                 .contextMenu { menu(for: project) }
@@ -42,6 +44,7 @@ struct ProjectsSection: View {
                     // Lines the plus up with the count badges instead of the sidebar's edge.
                     .padding(.trailing, 14)
             }
+            .padding(.bottom, 2)
         }
         .confirmationDialog(
             deleteTitle, isPresented: isDeleting, presenting: deleting
