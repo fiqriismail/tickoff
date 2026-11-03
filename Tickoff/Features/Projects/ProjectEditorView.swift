@@ -21,39 +21,42 @@ struct ProjectEditorView: View {
     private var isNew: Bool { draft.id == nil }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(isNew ? "New project" : "Edit project").font(.title2.bold())
+        VStack(alignment: .leading, spacing: 16) {
+            Text(isNew ? "New Project" : "Edit Project").font(.title2)
 
-            field("Name") {
-                TextField("Name", text: $draft.name)
-                    .textFieldStyle(.roundedBorder)
-                    .labelsHidden()
+            // The columns style puts right-aligned labels in a leading column, controls in the second.
+            Form {
+                TextField("Name", text: $draft.name, prompt: Text("Required"))
                     .focused($nameFocused)
                     .onSubmit(save)
-            }
 
-            field("Colour") {
-                HStack(spacing: 10) {
-                    ForEach(ProjectColour.allCases, id: \.self) { colour in
-                        swatch(colour)
+                LabeledContent("Colour") {
+                    HStack(spacing: 6) {
+                        ForEach(ProjectColour.allCases, id: \.self) { colour in
+                            swatch(colour)
+                        }
                     }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("Colour")
+                }
+
+                LabeledContent("Notes") {
+                    TextEditor(text: $draft.notes)
+                        .font(.body)
+                        .frame(height: 70)
+                        .scrollContentBackground(.hidden)
+                        .padding(4)
+                        .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6).strokeBorder(Color(nsColor: .separatorColor)))
+                }
+
+                if !isNew && !draft.isInbox {
+                    Toggle("Archived", isOn: $draft.archived)
+                        .help("Archived projects are hidden from the sidebar; their tasks still show under All Projects.")
                 }
             }
-
-            field("Notes") {
-                TextEditor(text: $draft.notes)
-                    .frame(height: 70)
-                    .scrollContentBackground(.hidden)
-                    .padding(4)
-                    .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6).strokeBorder(Color(nsColor: .separatorColor)))
-            }
-
-            if !isNew && !draft.isInbox {
-                Toggle("Archived", isOn: $draft.archived)
-                    .help("Archived projects are hidden from the sidebar; their tasks still show under All Projects.")
-            }
+            .formStyle(.columns)
 
             if let error {
                 Text(error).foregroundStyle(.red)
@@ -65,14 +68,15 @@ struct ProjectEditorView: View {
                     .keyboardShortcut(.cancelAction)
                 Button(isNew ? "Create" : "Save", action: save)
                     .keyboardShortcut(.defaultAction)
+                    .disabled(draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
-            .padding(.top, 6)
         }
-        .padding(24)
+        .padding(20)
         .frame(width: 440)
         .onAppear { nameFocused = true }
     }
 
+    /// A radio-style swatch: ringed and marked selected when chosen, always labelled for VoiceOver.
     private func swatch(_ accent: ProjectColour) -> some View {
         Button { draft.colour = accent } label: {
             Circle().fill(accent.color).frame(width: 20, height: 20)
@@ -83,16 +87,6 @@ struct ProjectEditorView: View {
         .help(accent.label)
         .accessibilityLabel(accent.label)
         .accessibilityAddTraits(draft.colour == accent ? .isSelected : [])
-    }
-
-    private func field<Content: View>(_ label: String, @ViewBuilder content: () -> Content)
-        -> some View
-    {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label).font(.caption).foregroundStyle(.secondary)
-            content()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func save() {

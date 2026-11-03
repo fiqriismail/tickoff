@@ -50,14 +50,14 @@ struct AddTaskBar: View {
 
             Button("Add", systemImage: "plus", action: add)
                 .buttonStyle(.borderedProminent)
+                .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
-        .controlSize(.large)
         // Selecting another project in the sidebar changes where tasks go by default.
         .onChange(of: defaultProjectID) { chosenProjectID = nil }
     }
 
     private var placeholder: String {
-        project.map { "Add a task to \($0.name) and press Return" } ?? "Add a task and press Return"
+        project.map { "Add a task to \($0.name)" } ?? "Add a task"
     }
 
     /// Capped width, so a long project name can't push Priority and Add off the bar.
