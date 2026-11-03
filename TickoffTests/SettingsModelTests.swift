@@ -14,36 +14,24 @@ struct SettingsModelTests {
     @Test func aNewModelStartsWithTheSavedSettings() throws {
         let database = try AppDatabase()
         let store = SettingsStore(database: database)
-        try store.save(Appearance(mode: .dark, accent: .rose))
+        try store.save(Appearance(compactCards: true, showNotes: false))
 
-        #expect(SettingsModel(store: store).appearance.mode == .dark)
-        #expect(SettingsModel(store: store).appearance.accent == .rose)
+        #expect(SettingsModel(store: store).appearance.compactCards == true)
+        #expect(SettingsModel(store: store).appearance.showNotes == false)
     }
 
     @Test func anEditAppliesImmediatelyAndPersists() throws {
         let (model, store, _) = try makeModel()
-        model.update { $0.accent = .violet }
+        model.update { $0.compactCards = true }
 
-        #expect(model.appearance.accent == .violet)
-        #expect(try store.load().accent == .violet)
+        #expect(model.appearance.compactCards == true)
+        #expect(try store.load().compactCards == true)
         #expect(model.errorMessage == nil)
-    }
-
-    @Test func resetRestoresTheDefaultsAndPersistsThem() throws {
-        let (model, store, _) = try makeModel()
-        model.update {
-            $0.mode = .light
-            $0.compactCards = true
-        }
-        model.resetToDefaults()
-
-        #expect(model.appearance == .default)
-        #expect(try store.load() == .default)
     }
 
     @Test func aFailedSaveKeepsTheEditOnScreenAndReportsTheError() throws {
         let (model, _, database) = try makeModel()
-        model.update { $0.mode = .light }
+        model.update { $0.compactCards = true }
         try database.queue.write { db in
             try db.execute(
                 sql: """
@@ -52,36 +40,36 @@ struct SettingsModelTests {
                     """)
         }
 
-        model.update { $0.mode = .dark }
+        model.update { $0.showNotes = false }
 
-        #expect(model.appearance.mode == .dark)
+        #expect(model.appearance.showNotes == false)
         #expect(model.errorMessage?.contains("Couldn't save") == true)
     }
 
     @Test func aSuccessfulSaveClearsEarlierError() throws {
         let (model, _, database) = try makeModel()
-        model.update { $0.mode = .light }
+        model.update { $0.compactCards = true }
         try database.queue.write { db in
             try db.execute(
                 sql: "CREATE TRIGGER reject_all BEFORE UPDATE ON settings BEGIN SELECT RAISE(ABORT, 'nope'); END")
         }
-        model.update { $0.mode = .dark }
+        model.update { $0.showNotes = false }
         #expect(model.errorMessage != nil)
 
         try database.queue.write { db in try db.execute(sql: "DROP TRIGGER reject_all") }
-        model.update { $0.mode = .system }
+        model.update { $0.compactCards = false }
         #expect(model.errorMessage == nil)
     }
 
     @Test func settingTheSameValueDoesNotWriteAgain() throws {
         let (model, _, database) = try makeModel()
-        model.update { $0.mode = .dark }
+        model.update { $0.showNotes = false }
         try database.queue.write { db in
             try db.execute(
                 sql: "CREATE TRIGGER reject_all BEFORE UPDATE ON settings BEGIN SELECT RAISE(ABORT, 'nope'); END")
         }
 
-        model.update { $0.mode = .dark }
+        model.update { $0.showNotes = false }
 
         #expect(model.errorMessage == nil)
     }

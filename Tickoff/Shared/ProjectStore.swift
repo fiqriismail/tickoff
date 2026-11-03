@@ -20,7 +20,7 @@ struct ProjectStore: Sendable {
     }
 
     @discardableResult
-    func create(name: String, colour: Accent = .system, notes: String = "") throws -> Int64 {
+    func create(name: String, colour: ProjectColour = .system, notes: String = "") throws -> Int64 {
         let name = try Self.validated(name)
         return try database.queue.write { db in
             try Self.requireUnique(name, excluding: nil, in: db)
@@ -89,7 +89,7 @@ struct ProjectStore: Sendable {
         Project(
             id: Int64.fromDatabaseValue(row[0]) ?? 0,
             name: String.fromDatabaseValue(row[1]) ?? "",
-            colour: String.fromDatabaseValue(row[2]).flatMap(Accent.init(key:)) ?? .system,
+            colour: String.fromDatabaseValue(row[2]).flatMap(ProjectColour.init(key:)) ?? .system,
             notes: String.fromDatabaseValue(row[3]) ?? "",
             archived: Int.fromDatabaseValue(row[4]) == 1,
             isInbox: Int.fromDatabaseValue(row[5]) == 1)

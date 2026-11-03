@@ -22,7 +22,8 @@ extension FocusedValues {
 
 /// The menu bar: New Task ⌘N, New Project ⇧⌘N, Clear Completed…, the Task menu (Edit ⌘E, Mark As, Delete ⌘⌫), Find Tasks ⌘F, the Show Notes and
 /// Compact Rows toggles, Hide/Show Sidebar ⌃⌘S and the About panel. Every toolbar item has a command here.
-/// Settings ⌘, comes from the `Settings` scene, and the Edit and Window menus are the standard ones.
+/// There is no Settings window: display options live in the View menu and the toolbar. The Edit and
+/// Window menus are the standard ones.
 struct AppCommands: Commands {
     @FocusedValue(\.appActions) private var actions
     @FocusedValue(\.taskActions) private var task

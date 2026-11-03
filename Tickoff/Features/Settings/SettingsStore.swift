@@ -1,6 +1,7 @@
 import GRDB
 
-/// The one place that talks SQL about the `settings` table.
+/// The one place that talks SQL about the `settings` table. The old `theme_mode`, `accent` and
+/// `ui_scale` rows stay in the file for older builds; they are neither read nor written.
 struct SettingsStore: Sendable {
     let database: AppDatabase
 
@@ -17,8 +18,6 @@ struct SettingsStore: Sendable {
                 let value = String.fromDatabaseValue(row[1])
             else { continue }
             switch key {
-            case "theme_mode": appearance.mode = ThemeMode(key: value) ?? appearance.mode
-            case "accent": appearance.accent = Accent(key: value) ?? appearance.accent
             case "compact_cards": appearance.compactCards = value == "true"
             case "show_notes": appearance.showNotes = value == "true"
             default: break
@@ -30,8 +29,6 @@ struct SettingsStore: Sendable {
     /// `write` is one transaction, so a failure never leaves a half-applied set of settings.
     func save(_ appearance: Appearance) throws {
         let entries: [(String, String)] = [
-            ("theme_mode", appearance.mode.key),
-            ("accent", appearance.accent.key),
             ("compact_cards", Self.boolKey(appearance.compactCards)),
             ("show_notes", Self.boolKey(appearance.showNotes)),
         ]
