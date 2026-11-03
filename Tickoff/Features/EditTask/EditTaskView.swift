@@ -23,58 +23,51 @@ struct EditTaskView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Edit task").font(.title2.bold())
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Edit Task").font(.title2)
 
-            field("Title") {
+            // The columns style puts right-aligned labels in a leading column, controls in the second.
+            Form {
                 TextField("Title", text: $draft.title)
-                    .textFieldStyle(.roundedBorder)
-                    .labelsHidden()
                     .focused($titleFocused)
                     .onSubmit(save)
-            }
 
-            field("Notes") {
-                TextEditor(text: $draft.notes)
-                    .frame(height: 90)
-                    .scrollContentBackground(.hidden)
-                    .padding(4)
-                    .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6).strokeBorder(Color(nsColor: .separatorColor)))
-            }
-
-            HStack(alignment: .top, spacing: 16) {
-                field("Status") {
-                    Picker("Status", selection: $draft.status) {
-                        ForEach(Status.allCases, id: \.self) { Text($0.label).tag($0) }
-                    }
-                    .labelsHidden()
+                LabeledContent("Notes") {
+                    TextEditor(text: $draft.notes)
+                        .font(.body)
+                        .frame(height: 90)
+                        .scrollContentBackground(.hidden)
+                        .padding(4)
+                        .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6).strokeBorder(Color(nsColor: .separatorColor)))
                 }
-                field("Priority") {
-                    Picker("Priority", selection: $draft.priority) {
-                        ForEach(Priority.allCases, id: \.self) { Text($0.label).tag($0) }
-                    }
-                    .labelsHidden()
-                }
-            }
 
-            field("Project") {
+                Picker("Status", selection: $draft.status) {
+                    ForEach(Status.allCases, id: \.self) { Text($0.label).tag($0) }
+                }
+                .fixedSize()
+
+                Picker("Priority", selection: $draft.priority) {
+                    ForEach(Priority.allCases, id: \.self) { Text($0.label).tag($0) }
+                }
+                .fixedSize()
+
                 Picker("Project", selection: $draft.projectID) {
                     ForEach(projects) { Text($0.name).tag($0.id) }
                 }
-                .labelsHidden()
-            }
+                .fixedSize()
 
-            field("Due date") {
-                HStack {
-                    Toggle("Due date", isOn: $draft.hasDue).labelsHidden()
-                    DatePicker("Due date", selection: $draft.dueDate, displayedComponents: .date)
-                        .labelsHidden()
-                        .disabled(!draft.hasDue)
-                    if !draft.hasDue { Text("No due date").foregroundStyle(.secondary) }
+                LabeledContent("Due") {
+                    HStack {
+                        Toggle("Due date", isOn: $draft.hasDue)
+                        DatePicker("Due date", selection: $draft.dueDate, displayedComponents: .date)
+                            .labelsHidden()
+                            .disabled(!draft.hasDue)
+                    }
                 }
             }
+            .formStyle(.columns)
 
             if let error {
                 Text(error).foregroundStyle(.red)
@@ -87,21 +80,10 @@ struct EditTaskView: View {
                 Button("Save", action: save)
                     .keyboardShortcut(.defaultAction)
             }
-            .padding(.top, 6)
         }
-        .padding(24)
+        .padding(20)
         .frame(width: 440)
         .onAppear { titleFocused = true }
-    }
-
-    private func field<Content: View>(_ label: String, @ViewBuilder content: () -> Content)
-        -> some View
-    {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label).font(.caption).foregroundStyle(.secondary)
-            content()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func save() {
