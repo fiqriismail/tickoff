@@ -15,11 +15,6 @@ struct SettingsView: View {
                 LabeledContent("Accent colour") {
                     AccentPicker(selection: binding(\.accent))
                 }
-
-                Picker("Text size", selection: binding(\.scale)) {
-                    ForEach(UiScale.allCases, id: \.self) { Text($0.label).tag($0) }
-                }
-                .pickerStyle(.segmented)
             } header: {
                 Text("Appearance").bold()
             }

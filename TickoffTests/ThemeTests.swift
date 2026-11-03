@@ -7,22 +7,18 @@ struct ThemeTests {
     @Test func keysRoundTripForEveryOption() {
         for mode in ThemeMode.allCases { #expect(ThemeMode(key: mode.key) == mode) }
         for accent in Accent.allCases { #expect(Accent(key: accent.key) == accent) }
-        for scale in UiScale.allCases { #expect(UiScale(key: scale.key) == scale) }
         #expect(ThemeMode(key: "nonsense") == nil)
         #expect(Accent(key: "nonsense") == nil)
-        #expect(UiScale(key: "nonsense") == nil)
     }
 
     @Test func keysAreTheStringsTheRustAppStored() {
         #expect(ThemeMode.allCases.map(\.key) == ["light", "dark", "system"])
         #expect(Accent.allCases.map(\.key) == ["system", "indigo", "violet", "teal", "rose", "orange"])
-        #expect(UiScale.allCases.map(\.key) == ["small", "default", "large"])
     }
 
     @Test func labelsAreTheUserFacingNames() {
         #expect(ThemeMode.allCases.map(\.label) == ["Light", "Dark", "System"])
         #expect(Accent.allCases.map(\.label) == ["System", "Indigo", "Violet", "Teal", "Rose", "Orange"])
-        #expect(UiScale.allCases.map(\.label) == ["Small", "Default", "Large"])
     }
 
     @Test func themeModeMapsToAColorSchemeAndSystemFollowsTheOS() {
@@ -47,9 +43,5 @@ struct ThemeTests {
     @Test func theSystemAccentHasNoFixedColourSoItFollowsMacOS() {
         #expect(Accent.system.hex(dark: true) == nil)
         #expect(Accent.system.hex(dark: false) == nil)
-    }
-
-    @Test func textSizeStepsUpFromSmallToLarge() {
-        #expect(UiScale.allCases.map(\.factor) == [0.9, 1.0, 1.15])
     }
 }

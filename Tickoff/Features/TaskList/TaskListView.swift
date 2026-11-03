@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The detail column: the toolbar (title, progress, search, More menu) and a lazily built list of
-/// task cards. It holds no task data of its own; the shell's `TaskSet` is passed in.
+/// task rows. It holds no task data of its own; the shell's `TaskSet` is passed in.
 struct TaskListView<Accessory: View>: View {
     let tasks: TaskSet
     let filter: Filter
@@ -22,15 +22,14 @@ struct TaskListView<Accessory: View>: View {
     /// Shell-supplied content shown between the header and the list (the quick-add bar).
     @ViewBuilder let accessory: () -> Accessory
 
-    /// The content margin; header, add bar and cards all align to it.
+    /// The content margin the add bar aligns to.
     private static var margin: CGFloat { 16 }
-    /// The side padding `List` adds around every row itself, subtracted so cards line up with the header.
-    private static var listRowSideInset: CGFloat { 10 }
 
     @State private var query = ""
     @State private var cache = VisibleCache()
     @State private var searchPresented = false
     @State private var confirmingClear = false
+    @State private var selection: Task.ID?
 
     private var searching: Bool {
         !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -106,26 +105,57 @@ struct TaskListView<Accessory: View>: View {
     /// there are.
     private func list(_ visible: [Task]) -> some View {
         let projectsByID = projectsByID
-        return List(visible) { task in
-            TaskCard(
+        return List(visible, selection: $selection) { task in
+            TaskRow(
                 task: task, appearance: appearance,
                 project: projectsByID?[task.projectID],
-                setStatus: { status in
-                    report(Outcome.run { try store.setStatus(id: task.id, to: status) })
-                },
-                edit: { edit(task) },
-                delete: { report(Outcome.run { try store.delete(id: task.id) }) }
+                setStatus: { status in setStatus(task, status) }
             )
-            .listRowInsets(
-                EdgeInsets(
-                    top: appearance.compactCards ? 3 : 5, leading: Self.margin - Self.listRowSideInset,
-                    bottom: appearance.compactCards ? 3 : 5, trailing: Self.margin - Self.listRowSideInset)
-            )
-            .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
         }
         .listStyle(.plain)
-        .scrollContentBackground(.hidden)
+        .contextMenu(forSelectionType: Task.ID.self) { ids in
+            if let task = task(in: visible, ids: ids) {
+                Button("Edit…") { edit(task) }
+                Menu("Change Status") {
+                    ForEach(Status.allCases, id: \.self) { status in
+                        Button(status.label) { setStatus(task, status) }
+                            .disabled(status == task.status)
+                    }
+                }
+                Divider()
+                Button("Delete", role: .destructive) { delete(task) }
+            }
+        } primaryAction: { ids in
+            // Return and double-click both open the editor.
+            if let task = task(in: visible, ids: ids) { edit(task) }
+        }
+        .onDeleteCommand {
+            if let task = task(in: visible, ids: selection.map { [$0] } ?? []) { delete(task) }
+        }
+        .focusedSceneValue(\.taskActions, selectedActions(in: visible))
+    }
+
+    private func task(in visible: [Task], ids: Set<Task.ID>) -> Task? {
+        guard ids.count == 1, let id = ids.first else { return nil }
+        return visible.first { $0.id == id }
+    }
+
+    /// Published to the menu bar; `nil` when no visible row is selected.
+    private func selectedActions(in visible: [Task]) -> TaskActions? {
+        guard let selection, let task = task(in: visible, ids: [selection]) else { return nil }
+        return TaskActions(
+            status: task.status,
+            edit: { edit(task) },
+            setStatus: { setStatus(task, $0) },
+            delete: { delete(task) })
+    }
+
+    private func setStatus(_ task: Task, _ status: Status) {
+        report(Outcome.run { try store.setStatus(id: task.id, to: status) })
+    }
+
+    private func delete(_ task: Task) {
+        report(Outcome.run { try store.delete(id: task.id) })
     }
 
     @ViewBuilder private var emptyState: some View {

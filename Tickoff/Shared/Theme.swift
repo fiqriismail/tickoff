@@ -79,61 +79,20 @@ enum Accent: String, CaseIterable, Sendable {
     }
 }
 
-enum UiScale: String, CaseIterable, Sendable {
-    case small
-    case standard = "default"
-    case large
-
-    var label: String {
-        switch self {
-        case .small: "Small"
-        case .standard: "Default"
-        case .large: "Large"
-        }
-    }
-
-    /// The value stored under `ui_scale`.
-    var key: String { rawValue }
-
-    init?(key: String) { self.init(rawValue: key) }
-
-    /// The Rust app's zoom factors. macOS ignores Dynamic Type, so text is scaled explicitly.
-    var factor: CGFloat {
-        switch self {
-        case .small: 0.9
-        case .standard: 1.0
-        case .large: 1.15
-        }
-    }
-
-    /// The default font for views that don't set their own, at this scale.
-    var bodyFont: Font { .system(size: NSFont.systemFontSize * factor) }
-}
-
 struct Appearance: Equatable, Sendable {
     var mode: ThemeMode = .system
     var accent: Accent = .system
-    var scale: UiScale = .standard
     var compactCards = false
     var showNotes = true
 
     static let `default` = Appearance()
 }
 
-extension Appearance {
-    /// A font `relativeSize` times the macOS body size at the chosen text size. Features use this
-    /// for headings and captions so they follow the text-size setting like the body text does.
-    func font(_ relativeSize: CGFloat = 1, weight: Font.Weight = .regular) -> Font {
-        .system(size: NSFont.systemFontSize * scale.factor * relativeSize, weight: weight)
-    }
-}
-
 extension View {
-    /// Applies the colour scheme, accent and text size, live, to everything inside this view.
+    /// Applies the colour scheme and accent, live, to everything inside this view.
     func applying(_ appearance: Appearance) -> some View {
         preferredColorScheme(appearance.mode.colorScheme)
             .tint(appearance.accent.color)
-            .font(appearance.scale.bodyFont)
     }
 }
 

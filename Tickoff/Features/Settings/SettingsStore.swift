@@ -19,7 +19,6 @@ struct SettingsStore: Sendable {
             switch key {
             case "theme_mode": appearance.mode = ThemeMode(key: value) ?? appearance.mode
             case "accent": appearance.accent = Accent(key: value) ?? appearance.accent
-            case "ui_scale": appearance.scale = UiScale(key: value) ?? appearance.scale
             case "compact_cards": appearance.compactCards = value == "true"
             case "show_notes": appearance.showNotes = value == "true"
             default: break
@@ -33,7 +32,6 @@ struct SettingsStore: Sendable {
         let entries: [(String, String)] = [
             ("theme_mode", appearance.mode.key),
             ("accent", appearance.accent.key),
-            ("ui_scale", appearance.scale.key),
             ("compact_cards", Self.boolKey(appearance.compactCards)),
             ("show_notes", Self.boolKey(appearance.showNotes)),
         ]
