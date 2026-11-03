@@ -5,7 +5,7 @@ import Testing
 
 struct SettingsStoreTests {
     private let custom = Appearance(
-        mode: .light, accent: .teal, scale: .large, compactCards: true, showNotes: false)
+        mode: .light, accent: .teal, compactCards: true, showNotes: false)
 
     private func makeStore() throws -> (SettingsStore, AppDatabase) {
         let database = try AppDatabase()
@@ -17,11 +17,10 @@ struct SettingsStoreTests {
         #expect(try store.load() == .default)
     }
 
-    @Test func theDefaultsAreSystemSystemDefaultCompactOffNotesOn() {
+    @Test func theDefaultsAreSystemSystemCompactOffNotesOn() {
         let defaults = Appearance.default
         #expect(defaults.mode == .system)
         #expect(defaults.accent == .system)
-        #expect(defaults.scale == .standard)
         #expect(defaults.compactCards == false)
         #expect(defaults.showNotes == true)
     }
@@ -41,8 +40,8 @@ struct SettingsStoreTests {
         try database.queue.write { db in
             try db.execute(
                 sql: """
-                    CREATE TRIGGER reject_scale BEFORE UPDATE ON settings
-                    WHEN NEW.key = 'ui_scale' BEGIN SELECT RAISE(ABORT, 'nope'); END
+                    CREATE TRIGGER reject_compact BEFORE UPDATE ON settings
+                    WHEN NEW.key = 'compact_cards' BEGIN SELECT RAISE(ABORT, 'nope'); END
                     """)
         }
 
@@ -64,7 +63,6 @@ struct SettingsStoreTests {
         let loaded = try store.load()
         #expect(loaded.mode == Appearance.default.mode)
         #expect(loaded.accent == .rose)
-        #expect(loaded.scale == Appearance.default.scale)
     }
 
     @Test func settingsWrittenByTheRustAppLoadUnchanged() throws {
@@ -81,7 +79,7 @@ struct SettingsStoreTests {
         #expect(
             try store.load()
                 == Appearance(
-                    mode: .dark, accent: .orange, scale: .small, compactCards: true,
+                    mode: .dark, accent: .orange, compactCards: true,
                     showNotes: false))
     }
 
@@ -96,7 +94,6 @@ struct SettingsStoreTests {
         #expect(
             stored == [
                 "accent=teal", "compact_cards=true", "show_notes=false", "theme_mode=light",
-                "ui_scale=large",
             ])
     }
 
@@ -108,7 +105,7 @@ struct SettingsStoreTests {
         let count = try database.queue.read { db in
             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM settings")
         }
-        #expect(count == 5)
+        #expect(count == 4)
     }
 
     @Test func recentProjectsRoundTripInOrderAndStartEmpty() throws {
@@ -129,5 +126,19 @@ struct SettingsStoreTests {
         }
 
         #expect(try store.loadRecentProjects() == [3, 7])
+    }
+
+    @Test func aLegacyTextSizeRowIsLeftUntouchedBySaving() throws {
+        let (store, database) = try makeStore()
+        try database.queue.write { db in
+            try db.execute(sql: "INSERT INTO settings VALUES ('ui_scale', 'large')")
+        }
+
+        try store.save(custom)
+
+        let kept = try database.queue.read { db in
+            try String.fetchOne(db, sql: "SELECT value FROM settings WHERE key = 'ui_scale'")
+        }
+        #expect(kept == "large")
     }
 }

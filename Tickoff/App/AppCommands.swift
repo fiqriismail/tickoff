@@ -20,11 +20,12 @@ extension FocusedValues {
     @Entry var appActions: AppActions?
 }
 
-/// The menu bar: New Task ⌘N, New Project ⇧⌘N, Clear Completed…, Find Tasks ⌘F, the Show Notes and
+/// The menu bar: New Task ⌘N, New Project ⇧⌘N, Clear Completed…, the Task menu (Edit ⌘E, Mark As, Delete ⌘⌫), Find Tasks ⌘F, the Show Notes and
 /// Compact Rows toggles, Hide/Show Sidebar ⌃⌘S and the About panel. Every toolbar item has a command here.
 /// Settings ⌘, comes from the `Settings` scene, and the Edit and Window menus are the standard ones.
 struct AppCommands: Commands {
     @FocusedValue(\.appActions) private var actions
+    @FocusedValue(\.taskActions) private var task
 
     var body: some Commands {
         SidebarCommands()
@@ -39,6 +40,23 @@ struct AppCommands: Commands {
             Divider()
             Button("Clear Completed…") { actions?.clearCompleted() }
                 .disabled(actions?.canClearCompleted != true)
+        }
+
+        CommandMenu("Task") {
+            Button("Edit Task…") { task?.edit() }
+                .keyboardShortcut("e")
+                .disabled(task == nil)
+            Menu("Mark As") {
+                ForEach(Status.allCases, id: \.self) { status in
+                    Button(status.label) { task?.setStatus(status) }
+                        .disabled(task == nil || task?.status == status)
+                }
+            }
+            Divider()
+            // ⌘⌫ rather than a bare Delete, which would also fire while typing in a text field.
+            Button("Delete") { task?.delete() }
+                .keyboardShortcut(.delete)
+                .disabled(task == nil)
         }
 
         CommandGroup(after: .sidebar) {
