@@ -36,6 +36,10 @@ struct ProjectEditorView: View {
                             swatch(colour)
                         }
                     }
+                    // Circles have no text baseline, so the label would sit at the bottom of the row;
+                    // centre it on the swatches instead.
+                    .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 5 }
+                    .padding(.vertical, 4)
                     .accessibilityElement(children: .contain)
                     .accessibilityLabel("Colour")
                 }
