@@ -107,6 +107,17 @@ packaging/macos/       # release.sh, make_icon.swift
 - Per-project status counts are cached in `TaskSet.replace`, like the other counts.
 - Deleting a project deletes its tasks in one transaction (no FK cascade).
 
+### Daily Goals
+
+- Projects have a fixed `ProjectKind`: `.tasks` (including Inbox and existing projects) or
+  `.dailyGoals`. No type conversion. Task pickers and counts exclude daily-goal projects.
+- `DailyGoalStore` owns SQL for `daily_goals` and `daily_goal_progress`. Definitions are
+  templates; progress snapshots keep name, tracking style and target per local calendar day.
+  Edits apply tomorrow, counters allow overachievement, and removal preserves history.
+- `Features/DailyGoals/DailyGoalsModel` owns today's cached rows/badges and day-change checks;
+  the shell routes outcomes and refreshes on activation. Archived projects stop daily updates.
+- Project deletion calls `DailyGoalStore.removeGoals` inside its transaction; snapshots stay.
+
 ### Data flow
 
 - Features are SwiftUI views that take the data they need as arguments (the `TaskSet`, a

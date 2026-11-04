@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-/// A named group of tasks. Lives in `Shared/` because the sidebar, the task list and the edit
+/// A named group of tasks or daily goals. Lives in `Shared/` because the sidebar, the task list and the edit
 /// sheet all need it and features cannot import each other. Persistence is `ProjectStore`'s job.
 struct Project: Identifiable, Equatable, Sendable {
     var id: Int64
@@ -11,6 +11,7 @@ struct Project: Identifiable, Equatable, Sendable {
     var archived: Bool
     /// The default project every task can fall back to; it can be neither deleted nor archived.
     var isInbox: Bool
+    var kind: ProjectKind = .tasks
 
     /// Inbox is seeded by migration `v2` with this id, which is also `tasks.project_id`'s default.
     static let inboxID: Int64 = 1
@@ -22,6 +23,7 @@ enum ProjectError: LocalizedError, Equatable {
     case duplicateName(String)
     case inboxProtected
     case notFound
+    case wrongKind
 
     var errorDescription: String? {
         switch self {
@@ -29,6 +31,20 @@ enum ProjectError: LocalizedError, Equatable {
         case .duplicateName(let name): "A project named “\(name)” already exists."
         case .inboxProtected: "Inbox can’t be archived or deleted."
         case .notFound: "That project no longer exists."
+        case .wrongKind: "This action is not available for that project type."
+        }
+    }
+}
+
+/// Stored project types; existing and unknown keys retain ordinary task behavior.
+enum ProjectKind: String, CaseIterable, Sendable {
+    case tasks
+    case dailyGoals = "daily_goals"
+
+    var label: String {
+        switch self {
+        case .tasks: "Tasks"
+        case .dailyGoals: "Daily Goals"
         }
     }
 }

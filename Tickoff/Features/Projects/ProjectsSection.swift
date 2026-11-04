@@ -13,6 +13,7 @@ struct ProjectsSection: View {
     let report: (Outcome) -> Void
     /// Opens the editor: a project to edit, or `nil` for a new one.
     let edit: (Project?) -> Void
+    var goalBadges: [Int64: String] = [:]
 
     @State private var deleting: Project?
 
@@ -26,10 +27,11 @@ struct ProjectsSection: View {
                 Label {
                     Text(project.name)
                 } icon: {
-                    Image(systemName: "circle.fill").foregroundStyle(project.colour.color)
+                    Image(systemName: project.kind == .dailyGoals ? "target" : "circle.fill")
+                        .foregroundStyle(project.colour.color)
                 }
                 .padding(.vertical, 2)
-                .badge(tasks.count(nil, project: project.id))
+                .badge(badge(for: project))
                 .tag(AnyHashable(ProjectScope.project(project.id)))
                 .contextMenu { menu(for: project) }
             }
@@ -53,8 +55,18 @@ struct ProjectsSection: View {
                 report(Outcome.run { try store.delete(id: project.id) })
             }
         } message: { project in
-            Text(deleteMessage(count: tasks.count(nil, project: project.id)))
+            Text(project.kind == .dailyGoals
+                ? "Its goals will be removed from Today. Recorded history will be kept."
+                : deleteMessage(count: tasks.count(nil, project: project.id)))
         }
+    }
+
+    private func badge(for project: Project) -> Text? {
+        if project.kind == .dailyGoals {
+            return Text(goalBadges[project.id] ?? "0/0")
+        }
+        let count = tasks.count(nil, project: project.id)
+        return count == 0 ? nil : Text(count.formatted())
     }
 
     @ViewBuilder private func menu(for project: Project) -> some View {

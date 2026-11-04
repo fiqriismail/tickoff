@@ -16,6 +16,7 @@ A small, native task manager for macOS, written in Swift with SwiftUI and a loca
 
 - Add, edit, complete and delete tasks, each with a title, notes, priority (Low / Medium / High), status (To do / In progress / Done) and optional due date
 - Projects: every task belongs to one project. The sidebar scopes the list to a project (or All Projects), with a colour dot and live count per project. Create, edit, archive and delete projects from the sidebar "+" or File > New Project…; the edit sheet can move a task
+- Daily Goals projects: a dedicated Today view with daily check-offs and whole-number counters, fresh progress each local day, and a completed/total sidebar badge
 - Quick-add: under All Projects a project menu (Inbox, your recent projects, then all projects) chooses where the task goes; inside a project, tasks go to that project
 - Sidebar filters by status with live counts (within the chosen project). The toolbar shows progress for the selected project and a More menu with Clear Completed
 - Search across titles and notes
@@ -32,12 +33,29 @@ A small, native task manager for macOS, written in Swift with SwiftUI and a loca
 |---|---|
 | New task | ⌘N |
 | New project | ⇧⌘N |
+| New goal (inside a Daily Goals project) | ⇧⌘G |
 | Find tasks | ⌘F |
 | Edit task | ⌘E |
 | Delete task | ⌘⌫ |
 | Hide / show sidebar | ⌃⌘S |
 
 In the Edit sheet, Enter in the title field saves and Esc cancels.
+
+## Daily Goals
+
+Choose **Daily Goals** in the New Project sheet, then select that project in the sidebar.
+Use **New Goal** to add either a daily check-off or a counter with a positive whole-number
+target. Counters have +1 / -1 controls, never go below zero, and can exceed their target.
+Select a goal to use the Goal menu, or open its row's More menu to edit or remove it.
+
+Each local calendar day starts fresh, without carrying forward incomplete goals. Progress
+is saved separately from ordinary tasks and does not affect task searches or status counts.
+Edits to a goal apply tomorrow; today's definition and progress remain unchanged. Removing
+a goal hides it from Today but keeps its history. Archiving a project hides it and stops daily
+updates; deleting the project also keeps recorded goal history.
+
+This first version displays Today only; history browsing, streaks and charts are not included.
+Existing projects remain task projects, and project types cannot be converted.
 
 ## Download
 
@@ -87,6 +105,11 @@ The folder is created on first run. To back up your tasks, copy that file. To st
 
 The first launch of a version with projects adds a `projects` table and a `project_id` column on tasks; your existing tasks move into a default **Inbox** project. The change only adds to the file, so an older build can still open it. Deleting a project deletes its tasks, after a confirmation that shows how many.
 
+Daily Goals adds a `kind` column to projects and separate `daily_goals` and
+`daily_goal_progress` tables. Existing projects default to Tasks. Daily progress stores a
+snapshot of its goal's name, tracking style and target, so later edits do not reinterpret
+recorded results.
+
 ## Project layout
 
 The code is organised as vertical slices: each feature owns its UI and logic, and features never import each other. The app shell wires them together.
@@ -101,6 +124,7 @@ Tickoff/
 │   └── ErrorBanner.swift     database error banner
 ├── Features/             one folder per feature
 │   ├── AddTask/              quick-add bar
+│   ├── DailyGoals/           Today view, goal editor, daily refresh and cached summaries
 │   ├── EditTask/             edit sheet and validation
 │   ├── Filters/              sidebar: project scope and status filters
 │   ├── Projects/             sidebar Projects section, project sheet and draft
@@ -108,6 +132,8 @@ Tickoff/
 │   └── TaskList/             toolbar, search, task rows, due labels
 ├── Shared/               used by more than one feature
 │   ├── AppDatabase.swift     opens the database and runs migrations
+│   ├── DailyGoal.swift       goal definitions, daily snapshots and tracking styles
+│   ├── DailyGoalStore.swift  goal and daily-progress SQL; history-preserving writes
 │   ├── TaskStore.swift       every SQL statement for tasks
 │   ├── Task.swift            Task, Status and Priority types
 │   ├── Project.swift         Project, ProjectScope and ProjectError types

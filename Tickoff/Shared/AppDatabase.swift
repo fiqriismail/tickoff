@@ -66,6 +66,30 @@ struct AppDatabase: Sendable {
                     ALTER TABLE tasks ADD COLUMN project_id INTEGER NOT NULL DEFAULT 1;
                     """)
         }
+        migrator.registerMigration("v3") { db in
+            try db.execute(
+                sql: """
+                    ALTER TABLE projects ADD COLUMN kind TEXT NOT NULL DEFAULT 'tasks';
+                    CREATE TABLE daily_goals (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        project_id INTEGER NOT NULL,
+                        name TEXT NOT NULL,
+                        tracking TEXT NOT NULL,
+                        target INTEGER NOT NULL CHECK (target > 0),
+                        removed INTEGER NOT NULL DEFAULT 0
+                    );
+                    CREATE INDEX daily_goals_project ON daily_goals (project_id, removed);
+                    CREATE TABLE daily_goal_progress (
+                        goal_id INTEGER NOT NULL,
+                        day TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        tracking TEXT NOT NULL,
+                        target INTEGER NOT NULL CHECK (target > 0),
+                        value INTEGER NOT NULL DEFAULT 0 CHECK (value >= 0),
+                        PRIMARY KEY (goal_id, day)
+                    );
+                    """)
+        }
         return migrator
     }
 }
