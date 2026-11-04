@@ -8,8 +8,8 @@ to create, and your data is stored locally.
 
 ## Start here
 
-- [Install Tickoff and add your first task](./guide/getting-started/).
-- [Get help with installation and first launch](./help/troubleshooting/).
+- [Install Tickoff and add your first task](./getting-started/).
+- [Get help with installation and first launch](../help/troubleshooting/).
 - [Download the latest release](https://github.com/fiqriismail/tickoff/releases/latest).
 
 ## Two ways to organise your day
