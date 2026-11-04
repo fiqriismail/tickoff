@@ -6,62 +6,39 @@ A small, native task manager for macOS, written in Swift with SwiftUI and a loca
 
 > **Coming from the Rust version?** The Swift app opens the same `~/.hello_gui/tasks.db`, so your tasks and settings carry over unchanged. The last Rust version is the git tag `v0.1.0-rust`. Windows and Linux are no longer supported.
 
+## User documentation
+
+Visit **[the Tickoff website](https://fiqriismail.github.io/tickoff/)** for the
+product overview and complete user guides:
+
+- [Getting started](https://fiqriismail.github.io/tickoff/guide/getting-started/)
+- [Tasks](https://fiqriismail.github.io/tickoff/guide/tasks/) and [Projects](https://fiqriismail.github.io/tickoff/guide/projects/)
+- [Daily Goals](https://fiqriismail.github.io/tickoff/guide/daily-goals/)
+- [Keyboard shortcuts](https://fiqriismail.github.io/tickoff/guide/keyboard-shortcuts/) and [display options](https://fiqriismail.github.io/tickoff/guide/appearance/)
+- [Data and backups](https://fiqriismail.github.io/tickoff/help/data-and-backups/) and [Troubleshooting](https://fiqriismail.github.io/tickoff/help/troubleshooting/)
+
 ## Screenshots
 
 | Light | Dark |
 |---|---|
-| ![Task list in light mode](brain/docs/screenshots/tasks-light.png) | ![Task list in dark mode with the violet accent](brain/docs/screenshots/tasks-dark.png) |
+| ![Task list in light mode](website/src/assets/screenshots/tasks-light.png) | ![Task list in dark mode](website/src/assets/screenshots/tasks-dark.png) |
 
 ## Features
 
-- Add, edit, complete and delete tasks, each with a title, notes, priority (Low / Medium / High), status (To do / In progress / Done) and optional due date
-- Projects: every task belongs to one project. The sidebar scopes the list to a project (or All Projects), with a colour dot and live count per project. Create, edit, archive and delete projects from the sidebar "+" or File > New Project…; the edit sheet can move a task
-- Daily Goals projects: a dedicated Today view with daily check-offs and whole-number counters, fresh progress each local day, and a completed/total sidebar badge
-- Quick-add: under All Projects a project menu (Inbox, your recent projects, then all projects) chooses where the task goes; inside a project, tasks go to that project
-- Sidebar filters by status with live counts (within the chosen project). The toolbar shows progress for the selected project and a More menu with Clear Completed
-- Search across titles and notes
-- Right-click a task for a context menu (Edit, Change Status, Delete); Return or double-click opens it, and the Task menu has the same commands
-- Follows the system light / dark appearance and accent colour; Show Notes and Use Compact Rows are in the toolbar More menu and the View menu
-- Hide or show the sidebar, and resize it
-- Native macOS menu bar and window conventions
+- Tasks with notes, priorities, statuses and optional due dates
+- Projects, quick-add destinations, scoped search and status filters
+- Daily Goals with check-offs, whole-number counters and fresh local-day progress
+- Native macOS menus, system appearance, note previews and compact rows
 - Stays fast with 10,000+ tasks: the list only builds the rows on screen
 - All data is stored locally in a SQLite file. There is no account and no network access
-
-## Keyboard shortcuts
-
-| Action | Shortcut |
-|---|---|
-| New task | ⌘N |
-| New project | ⇧⌘N |
-| New goal (inside a Daily Goals project) | ⇧⌘G |
-| Find tasks | ⌘F |
-| Edit task | ⌘E |
-| Delete task | ⌘⌫ |
-| Hide / show sidebar | ⌃⌘S |
-
-In the Edit sheet, Enter in the title field saves and Esc cancels.
-
-## Daily Goals
-
-Choose **Daily Goals** in the New Project sheet, then select that project in the sidebar.
-Use **New Goal** to add either a daily check-off or a counter with a positive whole-number
-target. Counters have +1 / -1 controls, never go below zero, and can exceed their target.
-Select a goal to use the Goal menu, or open its row's More menu to edit or remove it.
-
-Each local calendar day starts fresh, without carrying forward incomplete goals. Progress
-is saved separately from ordinary tasks and does not affect task searches or status counts.
-Edits to a goal apply tomorrow; today's definition and progress remain unchanged. Removing
-a goal hides it from Today but keeps its history. Archiving a project hides it and stops daily
-updates; deleting the project also keeps recorded goal history.
-
-This first version displays Today only; history browsing, streaks and charts are not included.
-Existing projects remain task projects, and project types cannot be converted.
 
 ## Download
 
 Grab `Tickoff-<version>-macos-universal.zip` from the [latest release](https://github.com/fiqriismail/tickoff/releases/latest) (Apple Silicon and Intel), unzip it and drag `Tickoff.app` to Applications. It needs macOS 14 Sonoma or later.
 
-The app is not signed with an Apple Developer ID, so macOS blocks it the first time. Right-click `Tickoff.app`, choose **Open**, then confirm. Or run `xattr -cr /Applications/Tickoff.app` once in Terminal.
+Releases are ad-hoc signed, not Developer ID signed or notarised. If macOS blocks
+the first launch, follow the
+[approval instructions](https://fiqriismail.github.io/tickoff/help/troubleshooting/#macos-blocks-the-first-launch).
 
 ## Requirements
 
@@ -89,11 +66,10 @@ Tests use an in-memory database, and the app does the same while they run, so th
 
 The user documentation website uses Astro + Starlight. See
 [website/README.md](website/README.md) for requirements, local preview, production
-build and contribution instructions. GitHub Pages publishing is tracked in
-[#60](https://github.com/fiqriismail/tickoff/issues/60); the site is not published yet.
-The Website workflow validates pull requests and main changes, but deployment
-stays disabled until explicitly enabled. See the
-[publication checklist](website/README.md#first-publication-only-after-owner-approval).
+build and contribution instructions. The site is live at
+<https://fiqriismail.github.io/tickoff/>. The Website workflow validates pull requests
+and publishes relevant main changes after successful validation. See the
+[deployment controls](website/README.md#github-actions-and-publishing).
 
 ## Release build
 
@@ -115,7 +91,7 @@ The folder is created on first run. To back up your data, quit all Tickoff
 instances and database tools, then copy the entire `~/.hello_gui/` folder,
 including any SQLite sidecars. Do not copy just a live database file. To start
 fresh, back up and move the closed app's data folder aside rather than deleting it.
-See the [data and backups guide](website/src/content/docs/help/data-and-backups.md)
+See the [data and backups guide](https://fiqriismail.github.io/tickoff/help/data-and-backups/)
 for safe restore steps; restoring replaces current data rather than merging it.
 
 The first launch of a version with projects adds a `projects` table and a `project_id` column on tasks; your existing tasks move into a default **Inbox** project. The change only adds to the file, so an older build can still open it. Deleting a project deletes its tasks, after a confirmation that shows how many.

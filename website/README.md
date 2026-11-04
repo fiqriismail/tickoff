@@ -40,6 +40,10 @@ without checking `npm audit` and running link-validation regression checks.
 
 ## GitHub Actions and publishing
 
+The site is live at <https://fiqriismail.github.io/tickoff/>. The owner approved
+first publication on 4 November 2026; Pages uses Actions and the repository
+deployment variable is enabled. The controls below still apply to future runs.
+
 [The Website workflow](../.github/workflows/website.yml) runs `npm ci`, the Astro
 check, the production build and link validation on pull requests and main pushes
 that change the website, workflow or app icon. It also supports manual dispatch.
