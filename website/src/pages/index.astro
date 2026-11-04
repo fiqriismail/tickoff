@@ -1,9 +1,11 @@
 ---
-import { Image } from 'astro:assets';
 import { Icon } from '@astrojs/starlight/components';
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
-import tasksLight from '../../../brain/docs/screenshots/tasks-light.png';
-import tasksDark from '../../../brain/docs/screenshots/tasks-dark.png';
+import AppScreenshot from '../components/AppScreenshot.astro';
+import tasksLight from '../assets/screenshots/tasks-light.png';
+import tasksDark from '../assets/screenshots/tasks-dark.png';
+import goalsLight from '../assets/screenshots/daily-goals-light.png';
+import goalsDark from '../assets/screenshots/daily-goals-dark.png';
 
 const base = import.meta.env.BASE_URL;
 const guide = `${base}guide/`;
@@ -30,29 +32,9 @@ const download = 'https://github.com/fiqriismail/tickoff/releases/latest';
 	<div class="landing">
 		<p class="requirements">macOS 14 Sonoma or later <span aria-hidden="true">&middot;</span> Apple Silicon &amp; Intel</p>
 
-		<figure class="app-preview">
-			<Image
-				class="preview-light"
-				src={tasksLight}
-				alt="Tickoff task list in light mode, with projects, status filters, priorities and due dates."
-				widths={[640, 1024, 1440, 1920]}
-				sizes="(min-width: 1200px) 1184px, calc(100vw - 32px)"
-				format="webp"
-				quality={85}
-				loading="eager"
-			/>
-			<Image
-				class="preview-dark"
-				src={tasksDark}
-				alt="Tickoff task list in dark mode, with projects, status filters, priorities and due dates."
-				widths={[640, 1024, 1440, 1920]}
-				sizes="(min-width: 1200px) 1184px, calc(100vw - 32px)"
-				format="webp"
-				quality={85}
-				loading="eager"
-			/>
-			<figcaption>Task-list preview from an earlier build. Refreshed screenshots are planned before launch.</figcaption>
-		</figure>
+		<AppScreenshot light={tasksLight} dark={tasksDark}
+			alt="Tickoff task list with projects, status filters, notes, priorities and due dates."
+			caption="Your projects and tasks, together in one native Mac window." eager />
 
 		<section class="features section" aria-labelledby="features-title">
 			<div class="section-heading">
@@ -93,17 +75,9 @@ const download = 'https://github.com/fiqriismail/tickoff/releases/latest';
 					Get started with Daily Goals <Icon name="right-arrow" />
 				</a>
 			</div>
-			<aside class="daily-example" aria-labelledby="example-title">
-				<p class="eyebrow">Example goals</p>
-				<h3 id="example-title">Small steps. Your rhythm.</h3>
-				<p>Your goals don't have to be complicated.</p>
-				<dl>
-					<div><dt>Read a few pages</dt><dd>A daily check-off</dd></div>
-					<div><dt>Take a walk</dt><dd>A daily check-off</dd></div>
-					<div><dt>Drink 8 glasses of water</dt><dd>A counter with a target of 8</dd></div>
-				</dl>
-				<p class="example-note">Today only. No streaks to protect or charts to keep up with.</p>
-			</aside>
+			<AppScreenshot light={goalsLight} dark={goalsDark}
+				alt="Daily Wellbeing Today view with a completed reading check-off, water at 5 of 8, an incomplete walk and stretch breaks at 3 of 3."
+				caption="Daily check-offs and counters, with a fresh start each day." />
 		</section>
 
 		<section class="local section" aria-labelledby="local-title">
@@ -178,7 +152,7 @@ const download = 'https://github.com/fiqriismail/tickoff/releases/latest';
 		border-radius: 0.75rem;
 	}
 
-	:global(.sl-markdown-content .landing *) {
+	:global(.sl-markdown-content .landing :is(h2, h3, p, ul, li)) {
 		margin-top: 0;
 	}
 
@@ -216,30 +190,6 @@ const download = 'https://github.com/fiqriismail/tickoff/releases/latest';
 	.requirements span,
 	.compatibility span {
 		margin-inline: 0.375rem;
-	}
-
-	.app-preview {
-		margin: 2rem 0 0;
-	}
-
-	.app-preview img {
-		display: block;
-		width: 100%;
-		height: auto;
-	}
-
-	.app-preview .preview-dark,
-	:global([data-theme="dark"]) .app-preview .preview-light {
-		display: none;
-	}
-
-	:global([data-theme="dark"]) .app-preview .preview-dark {
-		display: block;
-	}
-
-	figcaption {
-		text-align: center;
-		font-size: 0.8125rem;
 	}
 
 	.section {
@@ -303,11 +253,11 @@ const download = 'https://github.com/fiqriismail/tickoff/releases/latest';
 	}
 
 	.daily-goals {
-		display: grid;
-		grid-template-columns: 1.1fr 1fr;
-		align-items: center;
-		gap: 5rem;
 		border-top: 1px solid var(--sl-color-hairline);
+	}
+
+	.goals-copy {
+		max-width: 44rem;
 	}
 
 	.goals-copy ul {
@@ -335,41 +285,6 @@ const download = 'https://github.com/fiqriismail/tickoff/releases/latest';
 		gap: 0.5rem;
 		font-weight: 500;
 		text-underline-offset: 0.25em;
-	}
-
-	.daily-example {
-		padding: clamp(1.5rem, 3vw, 3rem);
-		border: 1px solid var(--sl-color-hairline);
-		border-radius: 1.5rem;
-		background: var(--sl-color-gray-6);
-	}
-
-	.daily-example h3 + p {
-		padding-top: 0.75rem;
-	}
-
-	.daily-example dl {
-		padding-top: 1.5rem;
-	}
-
-	.daily-example dl div {
-		padding-block: 1rem;
-		border-top: 1px solid var(--sl-color-hairline);
-	}
-
-	.daily-example dt {
-		color: var(--sl-color-white);
-		font-weight: 500;
-	}
-
-	.daily-example dd {
-		margin: 0;
-		font-size: 0.875rem;
-	}
-
-	.landing .example-note {
-		padding-top: 1rem;
-		font-size: 0.875rem;
 	}
 
 	.local {
@@ -429,9 +344,6 @@ const download = 'https://github.com/fiqriismail/tickoff/releases/latest';
 			padding: 1.25rem;
 		}
 
-		.daily-goals {
-			gap: 2rem;
-		}
 	}
 
 	@media (max-width: 38rem) {
@@ -439,8 +351,7 @@ const download = 'https://github.com/fiqriismail/tickoff/releases/latest';
 			--sl-nav-height: 7rem;
 		}
 
-		.feature-grid,
-		.daily-goals {
+		.feature-grid {
 			grid-template-columns: 1fr;
 		}
 

@@ -41,11 +41,13 @@ not publish the site.
 - `src/pages/404.astro` owns the error page; Starlight's injected 404 route is
   disabled to avoid generating a second route for the same address.
 - Place processed content images in `src/assets/` and static files in `public/`.
-- The landing page currently imports the existing task screenshots from
-  `../brain/docs/screenshots/` and labels them as earlier-build previews.
-  Replace these with approved refreshed task images and add a real Daily Goals
-  screenshot in [#59](https://github.com/fiqriismail/tickoff/issues/59) before
-  publishing. The Daily Goals example is explanatory content, not a screenshot.
+- Current screenshots live in `src/assets/screenshots/`. Use `AppScreenshot.astro`
+  to display matching light/dark images with responsive WebP output, descriptive
+  alternative text and a link to the original for readable full-size details.
+- Screenshots were captured from test-owned windows with fictional in-memory
+  data, not the real database. Capture from the permitted launching tool using
+  only the specific window ID; do not capture a whole display or use synthetic
+  input. Set appearance on the capture window rather than changing system settings.
 - Keep internal Markdown links relative to the current page URL. In Astro
   components, construct local links and public asset URLs with
   `import.meta.env.BASE_URL`, which includes the `/tickoff/` prefix. Do not use
