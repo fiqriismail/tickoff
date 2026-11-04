@@ -24,11 +24,21 @@ export default defineConfig({
 					items: [
 						{ label: 'Overview', slug: 'guide' },
 						{ label: 'Getting started', slug: 'guide/getting-started' },
+						{ label: 'Tasks', slug: 'guide/tasks' },
+						{ label: 'Search and filters', slug: 'guide/search-and-filters' },
+						{ label: 'Projects', slug: 'guide/projects' },
+						{ label: 'Daily Goals', slug: 'guide/daily-goals' },
+						{ label: 'Keyboard shortcuts', slug: 'guide/keyboard-shortcuts' },
+						{ label: 'Appearance and display', slug: 'guide/appearance' },
 					],
 				},
 				{
 					label: 'Help',
-					items: [{ label: 'Troubleshooting', slug: 'help/troubleshooting' }],
+					items: [
+						{ label: 'Data and backups', slug: 'help/data-and-backups' },
+						{ label: 'Troubleshooting', slug: 'help/troubleshooting' },
+						{ label: 'FAQ', slug: 'help/faq' },
+					],
 				},
 			],
 		}),

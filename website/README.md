@@ -34,6 +34,11 @@ not publish the site.
 - Add user guides as Markdown or MDX in `src/content/docs/`. Each page needs
   `title` and `description` frontmatter.
 - Maintain Guide and Help navigation in `astro.config.mjs`.
+- Guide pages cover getting started, tasks, search/filters, projects, Daily Goals,
+  shortcuts and display options. Help covers data/backups, troubleshooting and FAQ.
+  Keep command names, destructive-action warnings and current limitations aligned
+  with the app implementation; do not describe retained history as an available
+  history browser or an undo workflow.
 - The product landing page lives in `src/pages/index.astro`; the documentation
   overview lives at `/tickoff/guide/`. Header and footer overrides use the landing
   page layout only at the site root and retain Starlight's defaults for guides.
