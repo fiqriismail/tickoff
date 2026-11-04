@@ -4,6 +4,18 @@ import Testing
 @testable import Tickoff
 
 struct ProjectStoreTests {
+    @Test func projectTypesRoundTripAndCannotBeConverted() throws {
+        let database = try AppDatabase()
+        let store = ProjectStore(database: database)
+        let id = try store.create(name: "Health", kind: .dailyGoals)
+        var goalProject = try #require(try store.loadAll().first { $0.id == id })
+        #expect(goalProject.kind == .dailyGoals)
+        #expect(try store.loadAll().first { $0.isInbox }?.kind == .tasks)
+        goalProject.kind = .tasks
+        #expect(throws: ProjectError.wrongKind) { try store.update(goalProject) }
+        #expect(try store.loadAll().first { $0.id == id }?.kind == .dailyGoals)
+    }
+
     private func makeStore() throws -> (ProjectStore, AppDatabase) {
         let database = try AppDatabase()
         return (ProjectStore(database: database), database)

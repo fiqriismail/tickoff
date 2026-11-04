@@ -83,7 +83,7 @@ struct AppDatabaseTests {
         let applied = try reopened.queue.read { db in
             try String.fetchAll(db, sql: "SELECT identifier FROM grdb_migrations")
         }
-        #expect(applied == ["v1", "v2"])
+        #expect(applied == ["v1", "v2", "v3"])
     }
 
     @Test func aNewDatabaseHasTheTasksAndSettingsTables() throws {

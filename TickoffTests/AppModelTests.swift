@@ -5,6 +5,29 @@ import Testing
 
 @MainActor
 struct AppModelTests {
+    @Test func dailyProjectsRouteSeparatelyAndNeverAppearInTaskPickersOrCounts() throws {
+        let database = try AppDatabase()
+        let projects = ProjectStore(database: database)
+        let goals = try projects.create(name: "Health", kind: .dailyGoals)
+        let tasks = TaskStore(database: database)
+        try tasks.insert(title: "Ordinary", priority: .medium)
+        // An older build can still insert a task without understanding the new project type.
+        try database.queue.write {
+            try $0.execute(sql: "INSERT INTO tasks (title, project_id) VALUES (?, ?)",
+                           arguments: ["Legacy", goals])
+        }
+        let model = AppModel(database: database)
+        model.select(.project(goals))
+        #expect(model.selectedDailyProject?.id == goals)
+        #expect(model.newTaskProjectID == Project.inboxID)
+        #expect(model.tasks.count(nil) == 1)
+        #expect(!model.taskProjects.contains { $0.id == goals })
+        let task = try #require(model.tasks.visible(status: nil, query: "").first)
+        #expect(!model.projectChoices(for: task).contains { $0.id == goals })
+        model.select(.all)
+        #expect(model.selectedDailyProject == nil)
+    }
+
     private func seededModel() throws -> AppModel {
         let database = try AppDatabase()
         try database.queue.write { db in

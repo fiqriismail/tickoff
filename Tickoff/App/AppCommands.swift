@@ -14,6 +14,8 @@ struct AppActions {
     var compactRows: Bool
     var setShowNotes: (Bool) -> Void
     var setCompactRows: (Bool) -> Void
+    var showsTasks = true
+    var newGoal: (() -> Void)? = nil
 }
 
 extension FocusedValues {
@@ -27,6 +29,7 @@ extension FocusedValues {
 struct AppCommands: Commands {
     @FocusedValue(\.appActions) private var actions
     @FocusedValue(\.taskActions) private var task
+    @FocusedValue(\.goalActions) private var goal
 
     var body: some Commands {
         SidebarCommands()
@@ -34,7 +37,10 @@ struct AppCommands: Commands {
         CommandGroup(replacing: .newItem) {
             Button("New Task") { actions?.newTask() }
                 .keyboardShortcut("n")
-                .disabled(actions == nil)
+                .disabled(actions == nil || actions?.showsTasks != true)
+            Button("New Goal…") { actions?.newGoal?() }
+                .keyboardShortcut("g", modifiers: [.command, .shift])
+                .disabled(actions?.newGoal == nil)
             Button("New Project…") { actions?.newProject() }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
                 .disabled(actions == nil)
@@ -60,17 +66,29 @@ struct AppCommands: Commands {
                 .disabled(task == nil)
         }
 
+        CommandMenu("Goal") {
+            Button("Edit Goal…") { goal?.edit() }
+                .disabled(goal == nil)
+            Button(goal?.increaseLabel ?? "Increase Progress") { goal?.increase() }
+                .disabled(goal == nil)
+            Button("Decrease Progress") { goal?.decrease?() }
+                .disabled(goal?.decrease == nil)
+            Divider()
+            Button("Remove Goal…", role: .destructive) { goal?.remove() }
+                .disabled(goal == nil)
+        }
+
         CommandGroup(after: .sidebar) {
             Button("Find Tasks") { actions?.find() }
                 .keyboardShortcut("f")
-                .disabled(actions == nil)
+                .disabled(actions == nil || actions?.showsTasks != true)
             Divider()
             Toggle("Show Notes", isOn: Binding(
                 get: { actions?.showNotes ?? true }, set: { actions?.setShowNotes($0) }))
-                .disabled(actions == nil)
+                .disabled(actions == nil || actions?.showsTasks != true)
             Toggle("Use Compact Rows", isOn: Binding(
                 get: { actions?.compactRows ?? false }, set: { actions?.setCompactRows($0) }))
-                .disabled(actions == nil)
+                .disabled(actions == nil || actions?.showsTasks != true)
         }
 
         CommandGroup(replacing: .appInfo) {

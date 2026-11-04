@@ -32,6 +32,16 @@ struct ProjectEditorView: View {
                         .focused($nameFocused)
                         .onSubmit(save)
 
+                    if isNew {
+                        Picker("Type", selection: $draft.kind) {
+                            ForEach(ProjectKind.allCases, id: \.self) {
+                                Text($0.label).tag($0)
+                            }
+                        }
+                    } else {
+                        LabeledContent("Type", value: draft.kind.label)
+                    }
+
                     LabeledContent("Colour") {
                         HStack(spacing: 6) {
                             ForEach(ProjectColour.allCases, id: \.self) { colour in
@@ -103,7 +113,8 @@ struct ProjectEditorView: View {
         do {
             let project = try draft.validated()
             if draft.id == nil {
-                try store.create(name: project.name, colour: project.colour, notes: project.notes)
+                try store.create(
+                    name: project.name, colour: project.colour, notes: project.notes, kind: project.kind)
             } else {
                 try store.update(project)
                 if !project.isInbox { try store.setArchived(id: project.id, project.archived) }

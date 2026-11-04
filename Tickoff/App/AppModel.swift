@@ -8,6 +8,7 @@ final class AppModel {
     let database: AppDatabase
     let taskStore: TaskStore
     let projectStore: ProjectStore
+    let dailyGoals: DailyGoalsModel
     private let settingsStore: SettingsStore
     let settings: SettingsModel
     /// The single source of truth for tasks; features read it and never hold task data themselves.
@@ -28,6 +29,7 @@ final class AppModel {
         self.database = database
         taskStore = TaskStore(database: database)
         projectStore = ProjectStore(database: database)
+        dailyGoals = DailyGoalsModel(store: DailyGoalStore(database: database))
         settingsStore = SettingsStore(database: database)
         settings = SettingsModel(store: settingsStore)
         recentProjectIDs = (try? settingsStore.loadRecentProjects()) ?? []
@@ -39,6 +41,7 @@ final class AppModel {
         do {
             projects = try projectStore.loadAll()
             tasks.replace(try taskStore.loadAll())
+            try dailyGoals.reload()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -48,14 +51,20 @@ final class AppModel {
     }
 
     var visibleProjects: [Project] { projects.filter { !$0.archived } }
+    var taskProjects: [Project] { visibleProjects.filter { $0.kind == .tasks } }
+    var selectedDailyProject: Project? {
+        projects.first { $0.id == scope.projectID && $0.kind == .dailyGoals && !$0.archived }
+    }
 
     /// Where a quick-added task goes: the selected project, or Inbox under All Projects.
-    var newTaskProjectID: Int64 { scope.projectID ?? Project.inboxID }
+    var newTaskProjectID: Int64 {
+        selectedDailyProject == nil ? scope.projectID ?? Project.inboxID : Project.inboxID
+    }
 
     /// What the edit sheet's picker offers: the visible projects, plus the task's own project if
     /// that one is archived, so the picker never shows a blank selection.
     func projectChoices(for task: Task) -> [Project] {
-        projects.filter { !$0.archived || $0.id == task.projectID }
+        projects.filter { $0.kind == .tasks && (!$0.archived || $0.id == task.projectID) }
     }
 
     /// Remembers that quick-add just put a task in `id`, so the add bar can offer it again.

@@ -8,20 +8,23 @@ struct FiltersView<Projects: View>: View {
     let tasks: TaskSet
     @Binding var scope: ProjectScope
     @Binding var filter: Filter
+    var showsTaskFilters = true
     @ViewBuilder let projects: () -> Projects
 
     var body: some View {
         List(selection: selection) {
             projects()
-            Section {
-                ForEach(Filter.allCases, id: \.self) { filter in
-                    Label(filter.label, systemImage: filter.symbol)
-                        .padding(.vertical, 2)
-                        .badge(tasks.count(filter.status, project: scope.projectID))
-                        .tag(AnyHashable(filter))
+            if showsTaskFilters {
+                Section {
+                    ForEach(Filter.allCases, id: \.self) { filter in
+                        Label(filter.label, systemImage: filter.symbol)
+                            .padding(.vertical, 2)
+                            .badge(tasks.count(filter.status, project: scope.projectID))
+                            .tag(AnyHashable(filter))
+                    }
+                } header: {
+                    Text("Library").padding(.top, 8).padding(.bottom, 2)
                 }
-            } header: {
-                Text("Library").padding(.top, 8).padding(.bottom, 2)
             }
         }
         // A little air between the window controls and the first header.
@@ -30,7 +33,10 @@ struct FiltersView<Projects: View>: View {
 
     private var selection: Binding<Set<AnyHashable>> {
         Binding(
-            get: { SidebarSelection.selection(scope: scope, filter: filter) },
+            get: {
+                showsTaskFilters
+                    ? SidebarSelection.selection(scope: scope, filter: filter) : [AnyHashable(scope)]
+            },
             set: {
                 let next = SidebarSelection.reconcile($0, scope: scope, filter: filter)
                 scope = next.scope

@@ -10,6 +10,7 @@ struct ProjectDraft: Equatable {
     var notes: String
     var archived: Bool
     var isInbox: Bool
+    var kind: ProjectKind = .tasks
 
     /// A blank draft for "New Project".
     init() {
@@ -27,6 +28,7 @@ struct ProjectDraft: Equatable {
         notes = project.notes
         archived = project.archived
         isInbox = project.isInbox
+        kind = project.kind
     }
 
     /// The project to save, with the name trimmed; a blank name is refused.
@@ -35,6 +37,6 @@ struct ProjectDraft: Equatable {
         guard !trimmed.isEmpty else { throw ProjectError.blankName }
         return Project(
             id: id ?? 0, name: trimmed, colour: colour, notes: notes, archived: archived,
-            isInbox: isInbox)
+            isInbox: isInbox, kind: kind)
     }
 }

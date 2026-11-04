@@ -8,19 +8,21 @@ struct TaskStore: Sendable {
     /// Open tasks first, then by priority, then by due date (undated last), newest first.
     func loadAll() throws -> [Task] {
         try database.queue.read { db in
-            try Row.fetchAll(
+            let dailyIDs = Set(try ProjectStore.dailyGoalProjectIDs(in: db))
+            return try Row.fetchAll(
                 db,
                 sql: """
                     SELECT id, title, notes, priority, status, due, project_id FROM tasks
                     ORDER BY (status = 2), priority DESC, (due = ''), due, id DESC
                     """
-            ).map(Self.task(from:))
+            ).map(Self.task(from:)).filter { !dailyIDs.contains($0.projectID) }
         }
     }
 
     @discardableResult
     func insert(title: String, priority: Priority, projectID: Int64 = Project.inboxID) throws -> Int64 {
         try database.queue.write { db in
+            try ProjectStore.requireKind(.tasks, id: projectID, in: db)
             try db.execute(
                 sql: "INSERT INTO tasks (title, priority, project_id) VALUES (?, ?, ?)",
                 arguments: [title, priority.dbValue, projectID])
@@ -32,6 +34,7 @@ struct TaskStore: Sendable {
     @discardableResult
     func update(_ task: Task) throws -> Int {
         try database.queue.write { db in
+            try ProjectStore.requireKind(.tasks, id: task.projectID, in: db)
             try db.execute(
                 sql: """
                     UPDATE tasks SET title = ?, notes = ?, priority = ?, status = ?, due = ?,
@@ -64,14 +67,22 @@ struct TaskStore: Sendable {
         }
     }
 
-    /// Deletes the done tasks of `project`, or of every project when it is `nil`.
+    /// Deletes completed tasks in task projects only; hidden legacy rows in goal projects stay untouched.
     @discardableResult
     func clearCompleted(project: Int64? = nil) throws -> Int {
         try database.queue.write { db in
-            try db.execute(
-                sql: "DELETE FROM tasks WHERE status = ? AND (? IS NULL OR project_id = ?)",
-                arguments: [Status.done.dbValue, project, project])
-            return db.changesCount
+            let dailyIDs = Set(try ProjectStore.dailyGoalProjectIDs(in: db))
+            let projects = try project.map { [$0] } ?? Int64.fetchAll(
+                db, sql: "SELECT DISTINCT project_id FROM tasks WHERE status = ?",
+                arguments: [Status.done.dbValue])
+            var deleted = 0
+            for id in projects where !dailyIDs.contains(id) {
+                try db.execute(
+                    sql: "DELETE FROM tasks WHERE status = ? AND project_id = ?",
+                    arguments: [Status.done.dbValue, id])
+                deleted += db.changesCount
+            }
+            return deleted
         }
     }
 
