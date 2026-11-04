@@ -111,6 +111,9 @@ struct TaskListView<Accessory: View>: View {
                 project: projectsByID?[task.projectID],
                 setStatus: { status in setStatus(task, status) }
             )
+            .padding(.trailing, Self.margin)
+            // Keep the separator full-width while the row content has a trailing inset.
+            .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
         }
         .listStyle(.plain)
         .contextMenu(forSelectionType: Task.ID.self) { ids in
