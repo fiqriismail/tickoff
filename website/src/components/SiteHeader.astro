@@ -1,0 +1,91 @@
+---
+import DefaultHeader from '@astrojs/starlight/components/Header.astro';
+import SiteTitle from '@astrojs/starlight/components/SiteTitle.astro';
+import ThemeSelect from '@astrojs/starlight/components/ThemeSelect.astro';
+
+const isHome = Astro.locals.starlightRoute.id === '';
+const base = import.meta.env.BASE_URL;
+---
+
+{
+	isHome ? (
+		<div class="landing-header">
+			<div class="brand"><SiteTitle /></div>
+			<nav aria-label="Primary">
+				<a href={`${base}guide/`}>User Guide</a>
+				<a href="https://github.com/fiqriismail/tickoff">GitHub</a>
+				<a class="download" href="https://github.com/fiqriismail/tickoff/releases/latest">Download</a>
+			</nav>
+			<ThemeSelect />
+		</div>
+	) : <DefaultHeader />
+}
+
+<style>
+	.landing-header {
+		display: flex;
+		align-items: center;
+		gap: 1.5rem;
+		height: 100%;
+		max-width: 74rem;
+		margin-inline: auto;
+	}
+
+	.brand {
+		margin-inline-end: auto;
+	}
+
+	.brand :global(img) {
+		width: 2rem;
+		height: 2rem;
+		object-fit: contain;
+	}
+
+	nav {
+		display: flex;
+		align-items: center;
+		gap: 1.5rem;
+		font-size: 0.9375rem;
+	}
+
+	a {
+		color: var(--sl-color-gray-2);
+		text-decoration: none;
+	}
+
+	a:hover {
+		color: var(--sl-color-white);
+	}
+
+	.download {
+		padding: 0.5rem 1rem;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 0.625rem;
+		color: var(--sl-color-white);
+	}
+
+	@media (max-width: 38rem) {
+		.landing-header {
+			display: grid;
+			grid-template-columns: 1fr auto;
+			gap: 0.25rem 0.5rem;
+			align-content: center;
+		}
+
+		nav {
+			grid-row: 2;
+			grid-column: 1 / -1;
+			justify-content: space-between;
+			gap: 1rem;
+		}
+
+		.landing-header :global(starlight-theme-select) {
+			grid-column: 2;
+			grid-row: 1;
+		}
+
+		.download {
+			padding: 0.25rem 0.75rem;
+		}
+	}
+</style>

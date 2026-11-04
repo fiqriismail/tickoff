@@ -1,0 +1,75 @@
+---
+title: Getting started
+description: Install Tickoff on your Mac and create your first task.
+---
+
+import AppScreenshot from '../../../components/AppScreenshot.astro';
+import tasksLight from '../../../assets/screenshots/tasks-light.png';
+import tasksDark from '../../../assets/screenshots/tasks-dark.png';
+import editLight from '../../../assets/screenshots/edit-task-light.png';
+import editDark from '../../../assets/screenshots/edit-task-dark.png';
+import projectLight from '../../../assets/screenshots/new-project-light.png';
+import projectDark from '../../../assets/screenshots/new-project-dark.png';
+import goalsLight from '../../../assets/screenshots/daily-goals-light.png';
+import goalsDark from '../../../assets/screenshots/daily-goals-dark.png';
+
+## Install Tickoff
+
+1. Download the macOS universal ZIP from the
+   [latest GitHub release](https://github.com/fiqriismail/tickoff/releases/latest).
+2. Unzip the download.
+3. Drag **Tickoff.app** into **Applications**.
+4. Open Tickoff from Applications.
+
+The same download supports Apple Silicon and Intel Macs running macOS 14 Sonoma
+or later.
+
+:::note[First-launch approval]
+Tickoff is ad-hoc signed, not signed with an Apple Developer ID or notarised.
+macOS may block the first launch. Follow the
+[first-launch troubleshooting steps](../../help/troubleshooting/#macos-blocks-the-first-launch)
+if this happens.
+:::
+
+## Add your first task
+
+1. Select **Inbox** in the sidebar.
+2. Enter a task title in the quick-add field and press **Return**.
+3. Double-click the task to edit its notes, status, priority or due date.
+
+Use the sidebar status filters to focus the list, or press **Command-F** to search
+task titles and notes.
+
+<AppScreenshot light={tasksLight} dark={tasksDark}
+  alt="All Tasks showing fictional projects, notes, priorities, statuses and due dates."
+  caption="The sidebar scopes your tasks to a project or status." />
+
+<AppScreenshot light={editLight} dark={editDark}
+  alt="Edit Task sheet for Review the homepage layout, with notes, In Progress status, High priority, Website refresh project and a due date."
+  caption="Double-click a task to change its details, then choose Save." />
+
+## Explore projects and daily goals
+
+Choose **File > New Project** to create a project. Pick **Tasks** for ordinary
+tasks or **Daily Goals** for daily check-offs and counters. A project's type
+cannot be changed after creation.
+
+<AppScreenshot light={projectLight} dark={projectDark}
+  alt="New Project sheet with a required name, a Type picker currently set to Tasks, colour choices and notes."
+  caption="Choose Tasks or Daily Goals from the Type picker when creating a project." />
+
+Inside a Daily Goals project, use **New Goal** to add a check-off or a counter
+with a positive whole-number target. Daily goals are separate from task searches
+and task status filters.
+
+<AppScreenshot light={goalsLight} dark={goalsDark}
+  alt="Daily Wellbeing Today view with completed and incomplete check-offs, water at 5 of 8 and stretch breaks at 3 of 3."
+  caption="Check off a goal or use the minus and plus controls to update a counter." />
+
+## What next?
+
+- [Tasks](../tasks/): add details, complete tasks and understand deletion.
+- [Projects](../projects/): organise work and learn what archiving preserves.
+- [Daily Goals](../daily-goals/): daily resets, counter targets and tomorrow-only edits.
+- [Keyboard shortcuts](../keyboard-shortcuts/) and [display options](../appearance/).
+- [Data and backups](../../help/data-and-backups/): protect your local data.

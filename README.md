@@ -85,6 +85,16 @@ xcodebuild test  -project Tickoff.xcodeproj -scheme Tickoff -destination 'platfo
 
 Tests use an in-memory database, and the app does the same while they run, so they never touch your real tasks.
 
+## Documentation website
+
+The user documentation website uses Astro + Starlight. See
+[website/README.md](website/README.md) for requirements, local preview, production
+build and contribution instructions. GitHub Pages publishing is tracked in
+[#60](https://github.com/fiqriismail/tickoff/issues/60); the site is not published yet.
+The Website workflow validates pull requests and main changes, but deployment
+stays disabled until explicitly enabled. See the
+[publication checklist](website/README.md#first-publication-only-after-owner-approval).
+
 ## Release build
 
 ```sh
@@ -101,7 +111,12 @@ Projects, tasks and settings are stored in a single SQLite file in your home dir
 |---|---|
 | macOS | `~/.hello_gui/tasks.db` |
 
-The folder is created on first run. To back up your tasks, copy that file. To start fresh, delete it while the app is closed.
+The folder is created on first run. To back up your data, quit all Tickoff
+instances and database tools, then copy the entire `~/.hello_gui/` folder,
+including any SQLite sidecars. Do not copy just a live database file. To start
+fresh, back up and move the closed app's data folder aside rather than deleting it.
+See the [data and backups guide](website/src/content/docs/help/data-and-backups.md)
+for safe restore steps; restoring replaces current data rather than merging it.
 
 The first launch of a version with projects adds a `projects` table and a `project_id` column on tasks; your existing tasks move into a default **Inbox** project. The change only adds to the file, so an older build can still open it. Deleting a project deletes its tasks, after a confirmation that shows how many.
 

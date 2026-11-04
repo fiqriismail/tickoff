@@ -27,6 +27,10 @@ up automatically; do not hand-edit `project.pbxproj` to add them.
 
 ## Branching
 
+Before starting a new feature, create or reuse a GitHub milestone and create its scoped
+issues with acceptance criteria and dependencies. Assign the issues to that milestone
+before implementation; include user documentation work for user-facing changes.
+
 Work is tracked as GitHub issues. When you start implementing an issue, create a new
 branch for it before making any change; never implement an issue directly on `main`.
 
@@ -43,6 +47,13 @@ After finishing every task, write a small summary to `brain/daily-notes/dd-mm-yy
 - Each entry is a few lines: what was asked, what changed (files or areas), and anything
   left open or worth knowing next time. Keep it short.
 - Create `brain/daily-notes/` if it is missing.
+
+## User documentation
+
+When adding, changing or removing a user-facing feature, update the GitHub Pages website
+in `website/` as part of the same change. Keep affected guides, landing-page feature
+descriptions, keyboard shortcuts and screenshots accurate. The website is user-only;
+developer build and architecture documentation belongs in `README.md`.
 
 ## Architecture
 

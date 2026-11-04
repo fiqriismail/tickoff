@@ -1,0 +1,76 @@
+---
+title: Daily Goals
+description: Track daily check-offs and whole-number counters in a dedicated Today view.
+---
+
+import AppScreenshot from '../../../components/AppScreenshot.astro';
+import goalsLight from '../../../assets/screenshots/daily-goals-light.png';
+import goalsDark from '../../../assets/screenshots/daily-goals-dark.png';
+
+## Create your daily routine
+
+1. [Create a project](../projects/#create-a-project) and choose **Daily Goals** as its Type.
+2. Select that project in the sidebar.
+3. Choose **New Goal**, or **File > New Goal** (**Shift-Command-G**).
+4. Enter a name and choose **Tracking**. For a counter, enter a positive
+   whole-number **Daily target**.
+5. Choose **Create**.
+
+New goals appear in Today immediately. Ordinary tasks and Daily Goals stay
+separate: task searches, task status counts and Clear Completed do not include goals.
+
+## Check-offs and counters
+
+**Daily Check-off:** mark the checkbox when done, and uncheck it to reverse
+today's completion.
+
+**Counter:** use **+** to add one or **-** to subtract one. Values never go below
+zero. A counter is complete when its value reaches or exceeds its target, and
+can continue above the target. Each completed goal counts once in the sidebar
+badge, regardless of how far above target it is.
+
+<AppScreenshot light={goalsLight} dark={goalsDark}
+  alt="Today view with a completed reading check-off, water at 5 of 8, an unchecked walk and stretch breaks completed at 3 of 3."
+  caption="Track a yes-or-no goal or count towards a daily target." />
+
+Select a goal to use the **Goal** menu for editing, toggling completion,
+increasing/decreasing progress or removal. Each row also has a **Goal Actions**
+ellipsis menu for editing and removal.
+
+## A fresh local day
+
+Each local calendar day starts with fresh progress. Incomplete goals do not
+carry forward, and a previous day's count is not added to today's.
+
+The app checks for a new day while running and when it becomes active again.
+After sleep or a time-zone change, the view uses your Mac's local calendar day.
+It does not create missed-day entries while the app is closed or a project is
+archived.
+
+Recorded progress stays saved separately from the goal's current definition.
+This version displays **Today only**: there is no history browser, streak
+tracking or chart view.
+
+## Edit a goal
+
+Use the row's ellipsis menu and choose **Edit**, or select the goal and choose
+**Goal > Edit Goal**. You can change its name, tracking style and counter target.
+
+:::note[Edits apply tomorrow]
+Today's name, tracking style, target and progress remain unchanged. The row
+shows **Changes scheduled for tomorrow**. Tomorrow uses the updated definition;
+older recorded progress is not reinterpreted.
+:::
+
+## Remove a goal
+
+Choose **Remove** from its row menu or **Goal > Remove Goal**, then confirm.
+It disappears from Today immediately. Its recorded history is retained, but
+there is no restore command or history viewer in this version. Adding another
+goal with the same name creates a separate goal.
+
+[Archiving a project](../projects/#archive-a-project) hides it and stops daily
+updates. Deleting a Daily Goals project removes its goals from Today while
+retaining recorded history. Neither action makes that history browsable in the app.
+
+See [Data and backups](../../help/data-and-backups/) to protect recorded progress.
