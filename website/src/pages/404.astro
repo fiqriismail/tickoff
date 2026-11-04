@@ -1,0 +1,15 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+---
+
+<StarlightPage
+	frontmatter={{
+		title: 'Page not found',
+		description: 'This page is not part of the Tickoff user guide.',
+		template: 'splash',
+		pagefind: false,
+	}}
+>
+	<p>This page may have moved, or the address may be incorrect.</p>
+	<p><a href={import.meta.env.BASE_URL}>Return to the Tickoff user guide</a></p>
+</StarlightPage>

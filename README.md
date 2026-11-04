@@ -85,6 +85,13 @@ xcodebuild test  -project Tickoff.xcodeproj -scheme Tickoff -destination 'platfo
 
 Tests use an in-memory database, and the app does the same while they run, so they never touch your real tasks.
 
+## Documentation website
+
+The user documentation website uses Astro + Starlight. See
+[website/README.md](website/README.md) for requirements, local preview, production
+build and contribution instructions. GitHub Pages publishing is tracked in
+[#60](https://github.com/fiqriismail/tickoff/issues/60); the site is not published yet.
+
 ## Release build
 
 ```sh
