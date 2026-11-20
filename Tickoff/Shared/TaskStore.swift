@@ -22,49 +22,24 @@ struct TaskStore: Sendable {
     @discardableResult
     func insert(title: String, priority: Priority, projectID: Int64 = Project.inboxID) throws -> Int64 {
         try database.queue.write { db in
-            try ProjectStore.requireKind(.tasks, id: projectID, in: db)
-            try db.execute(
-                sql: "INSERT INTO tasks (title, priority, project_id) VALUES (?, ?, ?)",
-                arguments: [title, priority.dbValue, projectID])
-            return db.lastInsertedRowID
+            try Self.insert(title: title, priority: priority, projectID: projectID, in: db)
         }
     }
 
     /// Returns how many rows changed: 0 if the task no longer exists.
     @discardableResult
     func update(_ task: Task) throws -> Int {
-        try database.queue.write { db in
-            try ProjectStore.requireKind(.tasks, id: task.projectID, in: db)
-            try db.execute(
-                sql: """
-                    UPDATE tasks SET title = ?, notes = ?, priority = ?, status = ?, due = ?,
-                        project_id = ?
-                    WHERE id = ?
-                    """,
-                arguments: [
-                    task.title, task.notes, task.priority.dbValue, task.status.dbValue, task.due,
-                    task.projectID, task.id,
-                ])
-            return db.changesCount
-        }
+        try database.queue.write { db in try Self.update(task, in: db) }
     }
 
     @discardableResult
     func setStatus(id: Int64, to status: Status) throws -> Int {
-        try database.queue.write { db in
-            try db.execute(
-                sql: "UPDATE tasks SET status = ? WHERE id = ?",
-                arguments: [status.dbValue, id])
-            return db.changesCount
-        }
+        try database.queue.write { db in try Self.setStatus(id: id, to: status, in: db) }
     }
 
     @discardableResult
     func delete(id: Int64) throws -> Int {
-        try database.queue.write { db in
-            try db.execute(sql: "DELETE FROM tasks WHERE id = ?", arguments: [id])
-            return db.changesCount
-        }
+        try database.queue.write { db in try Self.delete(id: id, in: db) }
     }
 
     /// Deletes completed tasks in task projects only; hidden legacy rows in goal projects stay untouched.
@@ -84,6 +59,66 @@ struct TaskStore: Sendable {
             }
             return deleted
         }
+    }
+
+    // The `in db:` helpers below run inside the caller's transaction, so a batch of changes
+    // (`ChangeBatch`) commits or rolls back as one. The instance methods above wrap them.
+
+    @discardableResult
+    static func insert(
+        title: String, priority: Priority, projectID: Int64 = Project.inboxID, in db: Database
+    ) throws -> Int64 {
+        try ProjectStore.requireKind(.tasks, id: projectID, in: db)
+        try db.execute(
+            sql: "INSERT INTO tasks (title, priority, project_id) VALUES (?, ?, ?)",
+            arguments: [title, priority.dbValue, projectID])
+        return db.lastInsertedRowID
+    }
+
+    /// Returns how many rows changed: 0 if the task no longer exists.
+    @discardableResult
+    static func update(_ task: Task, in db: Database) throws -> Int {
+        try ProjectStore.requireKind(.tasks, id: task.projectID, in: db)
+        try db.execute(
+            sql: """
+                UPDATE tasks SET title = ?, notes = ?, priority = ?, status = ?, due = ?,
+                    project_id = ?
+                WHERE id = ?
+                """,
+            arguments: [
+                task.title, task.notes, task.priority.dbValue, task.status.dbValue, task.due,
+                task.projectID, task.id,
+            ])
+        return db.changesCount
+    }
+
+    @discardableResult
+    static func setStatus(id: Int64, to status: Status, in db: Database) throws -> Int {
+        try db.execute(sql: "UPDATE tasks SET status = ? WHERE id = ?", arguments: [status.dbValue, id])
+        return db.changesCount
+    }
+
+    /// Moves a task into a task project; 0 rows changed if the task no longer exists.
+    @discardableResult
+    static func move(id: Int64, toProject projectID: Int64, in db: Database) throws -> Int {
+        try ProjectStore.requireKind(.tasks, id: projectID, in: db)
+        try db.execute(
+            sql: "UPDATE tasks SET project_id = ? WHERE id = ?", arguments: [projectID, id])
+        return db.changesCount
+    }
+
+    @discardableResult
+    static func delete(id: Int64, in db: Database) throws -> Int {
+        try db.execute(sql: "DELETE FROM tasks WHERE id = ?", arguments: [id])
+        return db.changesCount
+    }
+
+    /// The task with this id, or nil. Unlike `loadAll` it does not hide goal-project rows.
+    static func task(id: Int64, in db: Database) throws -> Task? {
+        try Row.fetchOne(
+            db, sql: "SELECT id, title, notes, priority, status, due, project_id FROM tasks WHERE id = ?",
+            arguments: [id]
+        ).map(Self.task(from:))
     }
 
     /// Runs inside the caller's transaction so `ProjectStore.delete` removes tasks and project together.
