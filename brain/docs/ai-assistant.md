@@ -218,6 +218,77 @@ Tickoff/Features/Assistant/
    downloading a model, sizes, privacy: everything on-device, approving changes), landing
    page, requirements, screenshots. *Depends on 7.*
 
+## Spike results (#67)
+
+Pinned: `mlx-swift-lm` 3.33.0 (`mlx-swift` 0.33.0, `swift-syntax` 603.0.2), `swift-huggingface`
+1.0.1, `swift-transformers` 1.4.0, exact versions, app target only. Products linked: `MLXLLM`,
+`MLXLMCommon`, `MLXFoundationModels`, `MLXHuggingFace`, `HuggingFace`, `Tokenizers`.
+
+**Build findings (docs-vs-plan; the docs win)**
+
+- Xcode's **Metal Toolchain** must be installed (`xcodebuild -downloadComponent MetalToolchain`,
+  839 MB). With it, `xcodebuild` builds the shaders and `default.metallib` lands in the app bundle.
+- `MLXHuggingFace` ships Swift macros, so **every `xcodebuild` needs `-skipMacroValidation`**
+  (Xcode shows a trust prompt interactively). AGENTS.md, README and `release.sh` must add it
+  when the packages merge.
+- `MLXLMCommon` also declares a `Tool` type: code that imports both must write
+  `FoundationModels.Tool` / `FoundationModels.LanguageModel`.
+- `MLXLanguageModel.preload()` downloads and loads weights; the first generation still pays
+  the one-time Metal shader JIT.
+- The only warnings are `-Wc++17-extensions` from MLX's own Metal headers; none are in our code.
+
+**Harness** (throwaway, `Tickoff/Spike/SpikeHarness.swift`): 20 scripted prompts (18 need
+exactly one tool call, 2 need none) against stub tools that only record calls; every prompt gets a
+fresh session. Run once per Mac from a terminal:
+
+```sh
+TICKOFF_SPIKE=system,qwen3_1_7b_4bit,qwen3_4b_4bit,qwen3_8b_4bit \
+  build/dd/Build/Products/Debug/Tickoff.app/Contents/MacOS/Tickoff | tee spike-<mac>.md
+```
+
+Sizes below are GiB (the harness divides by 2^30). Tokens/s is output tokens over all generation
+wall time (prefill, reasoning tokens and tool round trips included). Peak MLX is `Memory.peakMemory`,
+reset before each model; peak footprint is the process's `phys_footprint` at the end of that model's
+run (models run one after another in one process). Load time includes the download when the weights
+were not cached, so the 8B's 777.8 s is mostly network. Raw output: `brain/docs/spike-m5pro-24gb.md`.
+
+| Model | Download | Load | Tokens/s | Peak MLX | Peak footprint | Tool calls |
+|---|---|---|---|---|---|---|
+| Apple's model | n/a | 0.0 s | 16.6 | n/a (runs outside our process) | 0.06 GiB | 16/20 |
+| `qwen3_1_7b_4bit` | 0.91 GiB | 126.8 s (incl. download) | 6.9 | 1.94 GiB | 1.19 GiB | 16/20 |
+| `qwen3_4b_4bit` | 2.12 GiB | 12.7 s (cached) | 12.7 | 2.88 GiB | 2.44 GiB | 18/20 (19/20 in practice) |
+| `qwen3_8b_4bit` | 4.30 GiB | 777.8 s (incl. download) | 4.9 | 7.09 GiB | 6.76 GiB | 20/20 |
+
+All on an Apple M5 Pro, 24 GB, GPU budget 17.76 GB, macOS 27.2.1.
+
+**Misses**
+
+- Apple's model never called `change_goal_progress` (3 prompts, answered in text) and set
+  "Reopen the flights task" to `in_progress` instead of `todo`. Its tool descriptions probably need to
+  be clearer about when goals apply; to be tuned in #69.
+- Qwen3 4B: no tool call for "Remind me to email Sam, high priority", and "water plants" instead of
+  "water the plants" (the check was too literal; the call itself was right).
+- Qwen3 1.7B: a malformed tool-call payload, a wrong task id, duplicate opposite calls, and the wrong
+  tool for "Reopen". Too unreliable for writes even with approval.
+- Qwen3 8B: no misses.
+
+**Conclusions**
+
+- **Curated list fixed:** Small = Qwen3 1.7B (kept for 8 GB Macs, with the accuracy caveat above),
+  Balanced = Qwen3 4B, Large = Qwen3 8B. Qwen3.5 2B was not measured and stays out of v1.
+  Measured `downloadBytes` / `peakMemoryBytes` (bytes, rounded up) are in `ModelChoice`.
+- **Accuracy rises with size:** 16, 18 (19) and 20 of 20, while 8B is also about 2.6× slower than 4B
+  (4.9 vs 12.7 tokens/s). Balanced is the sensible default for a Mac that can run it; Apple's model
+  is fastest but misses goal prompts.
+- **Thresholds (70% block / 50% tight of the GPU budget) held on this data.** Against an assumed GPU
+  budget of two thirds of RAM (8 GiB → 5.7 GB, 16 GiB → 11.4 GB): Small is recommended on 8 GB;
+  Balanced is 54% on 8 GB (tight); Large is 67% on 16 GB (tight, close to the 70% block line) and
+  over 100% on 8 GB (blocked). On this 24 GB Mac the budget is 74% of RAM, so real 8/16 GB budgets may be
+  somewhat higher, which only makes the checks more lenient.
+- **Not verified:** only this Mac was available, so 8 GB and 16 GB Macs (and a base M1/M2) were not
+  run. Their GPU budgets and speed are inferred, not measured, and the base M1/M2 "slow" warning
+  is a precaution. #67's acceptance criteria on 8 GB and 16 GB Macs are therefore not met.
+
 ## Risks
 
 - **MLX needs macOS 27:** Tahoe users only get Apple's model (owner's decision,
