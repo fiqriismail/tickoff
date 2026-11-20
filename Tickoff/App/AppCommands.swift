@@ -16,6 +16,8 @@ struct AppActions {
     var setCompactRows: (Bool) -> Void
     var showsTasks = true
     var newGoal: (() -> Void)? = nil
+    var assistantShown = false
+    var toggleAssistant: () -> Void = {}
 }
 
 extension FocusedValues {
@@ -79,6 +81,10 @@ struct AppCommands: Commands {
         }
 
         CommandGroup(after: .sidebar) {
+            Button(actions?.assistantShown == true ? "Hide Assistant" : "Show Assistant") { actions?.toggleAssistant() }
+                .keyboardShortcut("a", modifiers: [.command, .option])
+                .disabled(actions == nil)
+            Divider()
             Button("Find Tasks") { actions?.find() }
                 .keyboardShortcut("f")
                 .disabled(actions == nil || actions?.showsTasks != true)

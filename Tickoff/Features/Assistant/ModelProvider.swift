@@ -21,7 +21,7 @@ final class ModelProvider {
     let storage: ModelStorage
     private(set) var downloading: ModelChoice?
 
-    private let hardware: HardwareProfile
+    let hardware: HardwareProfile
     private let idleDelay: Duration
     private var downloadTask: _Concurrency.Task<Void, any Error>?
     private var idleTask: _Concurrency.Task<Void, Never>?

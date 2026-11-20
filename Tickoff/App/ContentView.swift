@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var findRequest = 0
     @State private var clearRequest = 0
     @State private var newGoalRequest = 0
+    @State private var showsAssistant = false
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -62,6 +63,16 @@ struct ContentView: View {
                 }
             }
         }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { showsAssistant.toggle() } label: { Label("Assistant", systemImage: "sparkles") }
+                    .help(showsAssistant ? "Hide the assistant" : "Show the assistant")
+            }
+        }
+        .inspector(isPresented: $showsAssistant) {
+            AssistantView(model: model.assistant)
+                .inspectorColumnWidth(min: 280, ideal: 340, max: 480)
+        }
         .sheet(item: $editing) { task in
             EditTaskView(
                 task: task, store: model.taskStore, projects: model.projectChoices(for: task),
@@ -85,7 +96,8 @@ struct ContentView: View {
                 setShowNotes: { value in model.settings.update { $0.showNotes = value } },
                 setCompactRows: { value in model.settings.update { $0.compactCards = value } },
                 showsTasks: model.selectedDailyProject == nil,
-                newGoal: model.selectedDailyProject == nil ? nil : { newGoalRequest += 1 })
+                newGoal: model.selectedDailyProject == nil ? nil : { newGoalRequest += 1 },
+                assistantShown: showsAssistant, toggleAssistant: { showsAssistant.toggle() })
         )
         .task {
             await model.dailyGoals.watchDayChanges(report: model.report)

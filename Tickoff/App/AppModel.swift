@@ -11,6 +11,16 @@ final class AppModel {
     let dailyGoals: DailyGoalsModel
     private let settingsStore: SettingsStore
     let settings: SettingsModel
+    /// The assistant panel's model. Built on first use, so launching without it costs nothing.
+    @ObservationIgnored private(set) lazy var assistant = AssistantModel(
+        provider: ModelProvider(), snapshot: { [unowned self] in assistantSnapshot() },
+        batch: ChangeBatch(database: database), report: { [unowned self] in handle($0) },
+        storedChoiceKey: try? settingsStore.loadAssistantModelKey(),
+        saveChoiceKey: { [unowned self] key in
+            do { try settingsStore.saveAssistantModelKey(key) } catch {
+                report(.failed("Couldn't save the assistant model: \(error.localizedDescription)"))
+            }
+        })
     /// The single source of truth for tasks; features read it and never hold task data themselves.
     private(set) var tasks = TaskSet()
     /// Every project, archived ones included; the sidebar and pickers use `visibleProjects`.
@@ -48,6 +58,14 @@ final class AppModel {
         if case .project(let id) = scope, !visibleProjects.contains(where: { $0.id == id }) {
             scope = .all
         }
+    }
+
+    /// What the assistant may see: the loaded tasks, visible projects and today's goals of active projects.
+    func assistantSnapshot() -> AssistantSnapshot {
+        let goalProjects = Set(visibleProjects.filter { $0.kind == .dailyGoals }.map(\.id))
+        let goals = dailyGoals.rows.filter { goalProjects.contains($0.key) }.values.flatMap { $0 }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        return AssistantSnapshot(tasks: tasks, projects: visibleProjects, goals: goals)
     }
 
     var visibleProjects: [Project] { projects.filter { !$0.archived } }

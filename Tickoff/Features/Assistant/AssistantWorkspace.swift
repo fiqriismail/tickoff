@@ -113,7 +113,9 @@ final class AssistantWorkspace: Sendable {
             You help the user manage their tasks in Tickoff. Today is \(weekday) \(day).
             Use the tools to look things up and to propose changes. Nothing changes until the user \
             approves a proposal, so say "I've proposed …", never "done". Never invent ids: find a task's \
-            id with search_tasks or get_task first. If a tool replies with an error, fix the arguments \
+            id with search_tasks or get_task first, searching for a few words of its title (not its \
+            status). To change a task, call the matching propose tool; only say you proposed something \
+            after a tool replied "Proposed #n". If a tool replies with an error, fix the arguments \
             and try again, or ask the user.
             Statuses: todo, inProgress, done. Priorities: low, medium, high. Dates are YYYY-MM-DD.
             Task projects: \(projects.isEmpty ? "none" : projects).
