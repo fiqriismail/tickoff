@@ -5,7 +5,7 @@ database (GRDB). This file is the contract for any coding agent working in this 
 follow the architecture below, and when in doubt, copy the patterns already in the code
 rather than inventing new ones.
 
-- **Stack:** Swift 6 language mode, SwiftUI, minimum macOS 14 Sonoma, Xcode 16+, GRDB (Swift
+- **Stack:** Swift 6 language mode, SwiftUI, minimum macOS 26 Tahoe (Apple Silicon only), Xcode 16+, GRDB (Swift
   Package Manager) for SQLite, Swift Testing for tests. macOS only.
 - **History:** the app was rewritten from Rust/egui. The last Rust commit is tagged
   `v0.1.0-rust`. The background and decisions are in `brain/docs/swift-port.md`.
@@ -17,7 +17,7 @@ rather than inventing new ones.
 ```sh
 xcodebuild build -project Tickoff.xcodeproj -scheme Tickoff -destination 'platform=macOS'
 xcodebuild test  -project Tickoff.xcodeproj -scheme Tickoff -destination 'platform=macOS'
-packaging/macos/release.sh   # Release archive, ad-hoc signed, dist/Tickoff-<version>-macos-universal.zip
+packaging/macos/release.sh   # Release archive, ad-hoc signed, dist/Tickoff-<version>-macos-arm64.zip
 ```
 
 Open `Tickoff.xcodeproj` in Xcode for day-to-day work (⌘R run, ⌘U test). Always leave the

@@ -34,7 +34,7 @@ product overview and complete user guides:
 
 ## Download
 
-Grab `Tickoff-<version>-macos-universal.zip` from the [latest release](https://github.com/fiqriismail/tickoff/releases/latest) (Apple Silicon and Intel), unzip it and drag `Tickoff.app` to Applications. It needs macOS 14 Sonoma or later.
+Grab `Tickoff-<version>-macos-arm64.zip` from the [latest release](https://github.com/fiqriismail/tickoff/releases/latest), unzip it and drag `Tickoff.app` to Applications. It needs macOS 26 Tahoe or later on an Apple Silicon Mac. On macOS 14 Sonoma or 15 Sequoia, or on an Intel Mac, keep using [Tickoff 0.5.0](https://github.com/fiqriismail/tickoff/releases/tag/v0.5.0), the last release that supports them.
 
 Releases are ad-hoc signed, not Developer ID signed or notarised. If macOS blocks
 the first launch, follow the
@@ -42,7 +42,7 @@ the first launch, follow the
 
 ## Requirements
 
-- macOS 14 Sonoma or later
+- macOS 26 Tahoe or later on Apple Silicon
 - **Xcode 16 or newer** (the project uses Swift 6 language mode). The only dependency, [GRDB](https://github.com/groue/GRDB.swift), is fetched by Swift Package Manager on the first build, so you need network access once.
 
 ## Build, test and run
@@ -77,7 +77,7 @@ and publishes relevant main changes after successful validation. See the
 packaging/macos/release.sh
 ```
 
-This archives the app in Release, ad-hoc signs it and writes `dist/Tickoff-<version>-macos-universal.zip` (arm64 and x86_64). The version is `MARKETING_VERSION` in the Xcode project. Set `ARCHS=arm64` to build for Apple Silicon only; the zip is then named `...-macos-arm64.zip`. `packaging/macos/make_icon.swift` regenerates the app icon artwork.
+This archives the app in Release, ad-hoc signs it and writes `dist/Tickoff-<version>-macos-arm64.zip` (Apple Silicon only). The version is `MARKETING_VERSION` in the Xcode project. `packaging/macos/make_icon.swift` regenerates the app icon artwork.
 
 ## Where your data lives
 
