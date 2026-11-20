@@ -68,7 +68,7 @@ struct SetStatusTool: FoundationModels.Tool {
     }
 }
 
-struct MoveTaskTool: FoundationModels.Tool {
+struct SpikeMoveTaskTool: FoundationModels.Tool {
     let recorder: CallRecorder
     let name = "move_task"
     let description = "Move an existing task to another project."
@@ -78,7 +78,7 @@ struct MoveTaskTool: FoundationModels.Tool {
     }
 }
 
-struct DeleteTaskTool: FoundationModels.Tool {
+struct SpikeDeleteTaskTool: FoundationModels.Tool {
     let recorder: CallRecorder
     let name = "delete_task"
     let description = "Delete an existing task."
@@ -202,7 +202,7 @@ enum SpikeHarness {
         let recorder = CallRecorder()
         let tools: [any FoundationModels.Tool] = [
             AddTaskTool(recorder: recorder), SetStatusTool(recorder: recorder),
-            MoveTaskTool(recorder: recorder), DeleteTaskTool(recorder: recorder),
+            SpikeMoveTaskTool(recorder: recorder), SpikeDeleteTaskTool(recorder: recorder),
             GoalProgressTool(recorder: recorder),
         ]
         let model: any FoundationModels.LanguageModel

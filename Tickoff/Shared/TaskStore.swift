@@ -66,12 +66,13 @@ struct TaskStore: Sendable {
 
     @discardableResult
     static func insert(
-        title: String, priority: Priority, projectID: Int64 = Project.inboxID, in db: Database
+        title: String, priority: Priority, projectID: Int64 = Project.inboxID, notes: String = "",
+        due: String = "", in db: Database
     ) throws -> Int64 {
         try ProjectStore.requireKind(.tasks, id: projectID, in: db)
         try db.execute(
-            sql: "INSERT INTO tasks (title, priority, project_id) VALUES (?, ?, ?)",
-            arguments: [title, priority.dbValue, projectID])
+            sql: "INSERT INTO tasks (title, notes, priority, due, project_id) VALUES (?, ?, ?, ?, ?)",
+            arguments: [title, notes, priority.dbValue, due, projectID])
         return db.lastInsertedRowID
     }
 
