@@ -5,7 +5,7 @@ database (GRDB). This file is the contract for any coding agent working in this 
 follow the architecture below, and when in doubt, copy the patterns already in the code
 rather than inventing new ones.
 
-- **Stack:** Swift 6 language mode, SwiftUI, minimum macOS 26 Tahoe (Apple Silicon only), Xcode 16+, GRDB (Swift
+- **Stack:** Swift 6 language mode, SwiftUI, minimum macOS 26 Tahoe (Apple Silicon only), Xcode 27+ (the MLX bridge needs the macOS 27 SDK), GRDB (Swift
   Package Manager) for SQLite, Swift Testing for tests. macOS only.
 - **History:** the app was rewritten from Rust/egui. The last Rust commit is tagged
   `v0.1.0-rust`. The background and decisions are in `brain/docs/swift-port.md`.
@@ -15,10 +15,14 @@ rather than inventing new ones.
 ## Commands
 
 ```sh
-xcodebuild build -project Tickoff.xcodeproj -scheme Tickoff -destination 'platform=macOS'
-xcodebuild test  -project Tickoff.xcodeproj -scheme Tickoff -destination 'platform=macOS'
+xcodebuild build -skipMacroValidation -project Tickoff.xcodeproj -scheme Tickoff -destination 'platform=macOS'
+xcodebuild test  -skipMacroValidation -project Tickoff.xcodeproj -scheme Tickoff -destination 'platform=macOS'
 packaging/macos/release.sh   # Release archive, ad-hoc signed, dist/Tickoff-<version>-macos-arm64.zip
 ```
+
+`-skipMacroValidation` is required because the MLX packages ship Swift macros (`MLXHuggingFace`);
+without it `xcodebuild` fails with "Macro … must be enabled". Xcode asks once to trust them.
+Building MLX also needs the Metal Toolchain (`xcodebuild -downloadComponent MetalToolchain`).
 
 Open `Tickoff.xcodeproj` in Xcode for day-to-day work (⌘R run, ⌘U test). Always leave the
 tree building without warnings and with all tests passing. The Xcode project uses a

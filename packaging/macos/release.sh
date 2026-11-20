@@ -10,7 +10,7 @@ ARCHS=${ARCHS:-"arm64"}
 ARCHIVE=build/Tickoff.xcarchive
 APP=dist/Tickoff.app
 
-VERSION=$(xcodebuild -project Tickoff.xcodeproj -scheme Tickoff -showBuildSettings 2>/dev/null \
+VERSION=$(xcodebuild -skipMacroValidation -project Tickoff.xcodeproj -scheme Tickoff -showBuildSettings 2>/dev/null \
     | awk '$1 == "MARKETING_VERSION" { print $3; exit }')
 [ -n "$VERSION" ] || { echo "Could not read MARKETING_VERSION" >&2; exit 1; }
 
@@ -21,7 +21,7 @@ else
 fi
 
 rm -rf "$ARCHIVE" dist
-xcodebuild archive \
+xcodebuild archive -skipMacroValidation \
     -project Tickoff.xcodeproj -scheme Tickoff -configuration Release \
     -archivePath "$ARCHIVE" \
     ARCHS="$ARCHS" ONLY_ACTIVE_ARCH=NO \
