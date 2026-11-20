@@ -43,7 +43,8 @@ the first launch, follow the
 ## Requirements
 
 - macOS 26 Tahoe or later on Apple Silicon
-- **Xcode 16 or newer** (the project uses Swift 6 language mode). The only dependency, [GRDB](https://github.com/groue/GRDB.swift), is fetched by Swift Package Manager on the first build, so you need network access once.
+- **Xcode 27 or newer** (Swift 6 language mode; the macOS 27 SDK is needed for the MLX bridge) with the **Metal Toolchain** installed: `xcodebuild -downloadComponent MetalToolchain`.
+- The dependencies, [GRDB](https://github.com/groue/GRDB.swift) and the on-device model packages ([mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm), [swift-huggingface](https://github.com/huggingface/swift-huggingface), [swift-transformers](https://github.com/huggingface/swift-transformers)), are fetched by Swift Package Manager on the first build, so you need network access once.
 
 ## Build, test and run
 
@@ -56,9 +57,11 @@ open Tickoff.xcodeproj    # then press ⌘R in Xcode to run, ⌘U to test
 Or from the command line:
 
 ```sh
-xcodebuild build -project Tickoff.xcodeproj -scheme Tickoff -destination 'platform=macOS'
-xcodebuild test  -project Tickoff.xcodeproj -scheme Tickoff -destination 'platform=macOS'
+xcodebuild build -skipMacroValidation -project Tickoff.xcodeproj -scheme Tickoff -destination 'platform=macOS'
+xcodebuild test  -skipMacroValidation -project Tickoff.xcodeproj -scheme Tickoff -destination 'platform=macOS'
 ```
+
+`-skipMacroValidation` is needed because the MLX packages include Swift macros; in Xcode you are asked once to trust them instead.
 
 Tests use an in-memory database, and the app does the same while they run, so they never touch your real tasks.
 
