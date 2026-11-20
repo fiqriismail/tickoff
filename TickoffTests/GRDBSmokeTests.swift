@@ -17,6 +17,6 @@ struct GRDBSmokeTests {
 
     @Test func appBundleHasTheExpectedIdentifierAndMinimumSystem() throws {
         let app = try #require(Bundle(identifier: "io.github.fiqriismail.tickoff"))
-        #expect(app.infoDictionary?["LSMinimumSystemVersion"] as? String == "14.0")
+        #expect(app.infoDictionary?["LSMinimumSystemVersion"] as? String == "26.0")
     }
 }

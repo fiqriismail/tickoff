@@ -1,12 +1,12 @@
 #!/bin/bash
 # Builds Tickoff in Release, ad-hoc signs it and zips it to dist/Tickoff-<version>-macos-<arch>.zip.
 # Usage: packaging/macos/release.sh   (run from anywhere)
-# ARCHS="arm64"        builds for Apple Silicon only (the zip is named ...-macos-arm64.zip)
-# ARCHS="arm64 x86_64" is the default: a universal app (the zip is named ...-macos-universal.zip)
+# ARCHS="arm64" is the default: Apple Silicon only (the zip is named ...-macos-arm64.zip)
+# ARCHS="arm64 x86_64" builds a universal app (...-macos-universal.zip); macOS 26 needs no Intel build
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-ARCHS=${ARCHS:-"arm64 x86_64"}
+ARCHS=${ARCHS:-"arm64"}
 ARCHIVE=build/Tickoff.xcarchive
 APP=dist/Tickoff.app
 

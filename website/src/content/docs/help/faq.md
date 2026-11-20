@@ -5,8 +5,9 @@ description: Answers about supported Macs, privacy, Daily Goals and current Tick
 
 ## Which Macs are supported?
 
-Tickoff requires **macOS 14 Sonoma or later**. The universal release runs on
-Apple Silicon and Intel Macs. The current native app does not support Windows,
+Tickoff requires **macOS 26 Tahoe or later** on an Apple Silicon Mac. Macs on macOS 14
+or 15, and Intel Macs, can keep using
+[Tickoff 0.5.0](https://github.com/fiqriismail/tickoff/releases/tag/v0.5.0). The current native app does not support Windows,
 Linux, iPhone or iPad.
 
 ## Do I need an account or internet connection?

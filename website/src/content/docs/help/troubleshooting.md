@@ -21,9 +21,10 @@ your organisation may restrict these options.
 
 ## Check your macOS version
 
-Tickoff requires **macOS 14 Sonoma or later**. Choose **Apple menu > About This
-Mac** to check your version. The universal download runs on both Apple Silicon
-and Intel Macs.
+Tickoff requires **macOS 26 Tahoe or later** on an Apple Silicon Mac. Choose
+**Apple menu > About This Mac** to check your version and chip. If your Mac is
+older, use [Tickoff 0.5.0](https://github.com/fiqriismail/tickoff/releases/tag/v0.5.0), the last release for macOS 14 and 15 and
+Intel Macs.
 
 ## A task seems to be missing
 

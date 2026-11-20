@@ -20,7 +20,7 @@ Use **Inbox** as a starting point, or create a project to group related work.
 **Daily Goals projects** have a dedicated Today view for daily check-offs and
 whole-number counters. Progress starts fresh each local calendar day.
 
-Tickoff requires **macOS 14 Sonoma or later** and supports Apple Silicon and Intel Macs.
+Tickoff requires **macOS 26 Tahoe or later** on an Apple Silicon Mac. On macOS 14 or 15, or on an Intel Mac, use [Tickoff 0.5.0](https://github.com/fiqriismail/tickoff/releases/tag/v0.5.0).
 
 ## Everyday workflows
 
