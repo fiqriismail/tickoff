@@ -153,4 +153,13 @@ extension SettingsStoreTests {
         }
         #expect(kept == ["accent=orange", "theme_mode=dark"])
     }
+
+    @Test func theAssistantModelKeyIsNilUntilSavedThenRoundTripsAndOverwrites() throws {
+        let (store, _) = try makeStore()
+        #expect(try store.loadAssistantModelKey() == nil)
+        try store.saveAssistantModelKey("balanced")
+        #expect(try store.loadAssistantModelKey() == "balanced")
+        try store.saveAssistantModelKey("apple")
+        #expect(try store.loadAssistantModelKey() == "apple")
+    }
 }

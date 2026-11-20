@@ -44,6 +44,25 @@ struct SettingsStore: Sendable {
         }
     }
 
+    /// The raw `assistant_model` key, or nil when never saved. The Assistant feature maps it to a model and
+    /// falls back to Apple's for anything unknown; this store stays free of feature types.
+    func loadAssistantModelKey() throws -> String? {
+        try database.queue.read { db in
+            try String.fetchOne(db, sql: "SELECT value FROM settings WHERE key = 'assistant_model'")
+        }
+    }
+
+    func saveAssistantModelKey(_ key: String) throws {
+        try database.queue.write { db in
+            try db.execute(
+                sql: """
+                    INSERT INTO settings (key, value) VALUES ('assistant_model', ?)
+                    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+                    """,
+                arguments: [key])
+        }
+    }
+
     /// Project ids last used by quick-add, most recent first, stored under `recent_projects` as
     /// comma-separated numbers. Anything unreadable is skipped.
     func loadRecentProjects() throws -> [Int64] {

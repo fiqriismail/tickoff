@@ -235,6 +235,13 @@ Pinned: `mlx-swift-lm` 3.33.0 (`mlx-swift` 0.33.0, `swift-syntax` 603.0.2), `swi
   `FoundationModels.Tool` / `FoundationModels.LanguageModel`.
 - `MLXLanguageModel.preload()` downloads and loads weights; the first generation still pays
   the one-time Metal shader JIT.
+- **`FoundationModels.LanguageModel` is itself macOS 27+**, and `SystemLanguageModel` only conforms to it on
+  27. On the macOS 26 minimum the session is built with the `SystemLanguageModel` initializer, so
+  `ModelProvider` hands out a ready `LanguageModelSession` (`session(for:tools:instructions:)`) instead of a
+  `LanguageModel`, and keeps loaded MLX models boxed as `Any`.
+- `MLXLanguageModel.availability` is `async`; `preload()` downloads and loads; `evict()` unloads;
+  `MLXDownloadProgress.shared` reports progress. `HubClient(cache: HubCache(cacheDirectory:))` redirects
+  downloads into `~/Library/Application Support/Tickoff/Models/` (verified by a live test).
 - **`MLXScriptedLM` cannot script tool calls yet** (its README lists them as planned; `ChatMLTemplate`
   throws `unsupported` for tools), and linking MLX into the test bundle would load it twice. The #69
   end-to-end test therefore uses a tiny scripted `FoundationModels.LanguageModel`
