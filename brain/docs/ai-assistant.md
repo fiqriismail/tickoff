@@ -235,6 +235,10 @@ Pinned: `mlx-swift-lm` 3.33.0 (`mlx-swift` 0.33.0, `swift-syntax` 603.0.2), `swi
   `FoundationModels.Tool` / `FoundationModels.LanguageModel`.
 - `MLXLanguageModel.preload()` downloads and loads weights; the first generation still pays
   the one-time Metal shader JIT.
+- **`MLXScriptedLM` cannot script tool calls yet** (its README lists them as planned; `ChatMLTemplate`
+  throws `unsupported` for tools), and linking MLX into the test bundle would load it twice. The #69
+  end-to-end test therefore uses a tiny scripted `FoundationModels.LanguageModel`
+  (`TickoffTests/ScriptedLanguageModel.swift`) that emits one tool call and then a reply.
 - The only warnings are `-Wc++17-extensions` from MLX's own Metal headers; none are in our code.
 
 **Harness** (throwaway, `Tickoff/Spike/SpikeHarness.swift`): 20 scripted prompts (18 need

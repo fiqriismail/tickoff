@@ -3,7 +3,7 @@ import GRDB
 
 /// One change the assistant proposes and the user approved. Pure data: `ChangeBatch` applies it.
 enum ProposedChange: Equatable, Sendable {
-    case addTask(title: String, priority: Priority, projectID: Int64)
+    case addTask(title: String, priority: Priority, projectID: Int64, notes: String = "", due: String = "")
     /// Only the non-nil fields change.
     case editTask(id: Int64, title: String? = nil, notes: String? = nil, priority: Priority? = nil, due: String? = nil)
     case setStatus(taskID: Int64, Status)
@@ -48,9 +48,11 @@ struct ChangeBatch: Sendable {
         _ change: ProposedChange, date: Date, calendar: Calendar, in db: Database
     ) throws {
         switch change {
-        case .addTask(let title, let priority, let projectID):
+        case .addTask(let title, let priority, let projectID, let notes, let due):
             try requireTaskProject(projectID, in: db)
-            try TaskStore.insert(title: try validated(title), priority: priority, projectID: projectID, in: db)
+            try TaskStore.insert(
+                title: try validated(title), priority: priority, projectID: projectID, notes: notes, due: due,
+                in: db)
         case .editTask(let id, let title, let notes, let priority, let due):
             var task = try requireTask(id, in: db)
             if let title { task.title = try validated(title) }
