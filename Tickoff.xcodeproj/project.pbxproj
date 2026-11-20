@@ -18,6 +18,12 @@
 
 /* Begin PBXBuildFile section */
 		A10000000000000000000030 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000050 /* GRDB */; };
+		B20000000000000000000011 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000011 /* MLXLLM */; };
+		B20000000000000000000012 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000012 /* MLXLMCommon */; };
+		B20000000000000000000013 /* MLXFoundationModels in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000013 /* MLXFoundationModels */; };
+		B20000000000000000000014 /* MLXHuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000014 /* MLXHuggingFace */; };
+		B20000000000000000000015 /* HuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000015 /* HuggingFace */; };
+		B20000000000000000000016 /* Tokenizers in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000016 /* Tokenizers */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,6 +50,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000030 /* GRDB in Frameworks */,
+				B20000000000000000000011 /* MLXLLM in Frameworks */,
+				B20000000000000000000012 /* MLXLMCommon in Frameworks */,
+				B20000000000000000000013 /* MLXFoundationModels in Frameworks */,
+				B20000000000000000000014 /* MLXHuggingFace in Frameworks */,
+				B20000000000000000000015 /* HuggingFace in Frameworks */,
+				B20000000000000000000016 /* Tokenizers in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -96,6 +108,12 @@
 			name = Tickoff;
 			packageProductDependencies = (
 				A10000000000000000000050 /* GRDB */,
+				B10000000000000000000011 /* MLXLLM */,
+				B10000000000000000000012 /* MLXLMCommon */,
+				B10000000000000000000013 /* MLXFoundationModels */,
+				B10000000000000000000014 /* MLXHuggingFace */,
+				B10000000000000000000015 /* HuggingFace */,
+				B10000000000000000000016 /* Tokenizers */,
 			);
 			productName = Tickoff;
 			productReference = A10000000000000000000011 /* Tickoff.app */;
@@ -154,6 +172,9 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				A10000000000000000000040 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
+				B10000000000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
+				B10000000000000000000002 /* XCRemoteSwiftPackageReference "swift-huggingface" */,
+				B10000000000000000000003 /* XCRemoteSwiftPackageReference "swift-transformers" */,
 			);
 			productRefGroup = A10000000000000000000003 /* Products */;
 			projectDirPath = "";
@@ -378,6 +399,30 @@
 				minimumVersion = 7.11.1;
 			};
 		};
+		B10000000000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm.git";
+			requirement = {
+				kind = exactVersion;
+				version = 3.33.0;
+			};
+		};
+		B10000000000000000000002 /* XCRemoteSwiftPackageReference "swift-huggingface" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/huggingface/swift-huggingface.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.1;
+			};
+		};
+		B10000000000000000000003 /* XCRemoteSwiftPackageReference "swift-transformers" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/huggingface/swift-transformers.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.4.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -385,6 +430,36 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A10000000000000000000040 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
 			productName = GRDB;
+		};
+		B10000000000000000000011 /* MLXLLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLLM;
+		};
+		B10000000000000000000012 /* MLXLMCommon */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLMCommon;
+		};
+		B10000000000000000000013 /* MLXFoundationModels */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXFoundationModels;
+		};
+		B10000000000000000000014 /* MLXHuggingFace */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXHuggingFace;
+		};
+		B10000000000000000000015 /* HuggingFace */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000002 /* XCRemoteSwiftPackageReference "swift-huggingface" */;
+			productName = HuggingFace;
+		};
+		B10000000000000000000016 /* Tokenizers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000003 /* XCRemoteSwiftPackageReference "swift-transformers" */;
+			productName = Tokenizers;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

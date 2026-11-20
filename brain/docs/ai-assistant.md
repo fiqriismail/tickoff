@@ -218,6 +218,47 @@ Tickoff/Features/Assistant/
    downloading a model, sizes, privacy: everything on-device, approving changes), landing
    page, requirements, screenshots. *Depends on 7.*
 
+## Spike results (#67, in progress)
+
+Pinned: `mlx-swift-lm` 3.33.0 (`mlx-swift` 0.33.0, `swift-syntax` 603.0.2), `swift-huggingface`
+1.0.1, `swift-transformers` 1.4.0, exact versions, app target only. Products linked: `MLXLLM`,
+`MLXLMCommon`, `MLXFoundationModels`, `MLXHuggingFace`, `HuggingFace`, `Tokenizers`.
+
+**Build findings (docs-vs-plan; the docs win)**
+
+- Xcode's **Metal Toolchain** must be installed (`xcodebuild -downloadComponent MetalToolchain`,
+  839 MB). With it, `xcodebuild` builds the shaders and `default.metallib` lands in the app bundle.
+- `MLXHuggingFace` ships Swift macros, so **every `xcodebuild` needs `-skipMacroValidation`**
+  (Xcode shows a trust prompt interactively). AGENTS.md, README and `release.sh` must add it
+  when the packages merge.
+- `MLXLMCommon` also declares a `Tool` type: code that imports both must write
+  `FoundationModels.Tool` / `FoundationModels.LanguageModel`.
+- `MLXLanguageModel.preload()` downloads and loads weights; the first generation still pays
+  the one-time Metal shader JIT.
+- The only warnings are `-Wc++17-extensions` from MLX's own Metal headers; none are in our code.
+
+**Harness** (throwaway, `Tickoff/Spike/SpikeHarness.swift`): 20 scripted prompts (18 need
+exactly one tool call, 2 need none) against stub tools that only record calls; every prompt gets a
+fresh session. Run once per Mac from a terminal:
+
+```sh
+TICKOFF_SPIKE=system,qwen3_1_7b_4bit,qwen3_4b_4bit,qwen3_8b_4bit \
+  build/dd/Build/Products/Debug/Tickoff.app/Contents/MacOS/Tickoff | tee spike-<mac>.md
+```
+
+Tokens/s is output tokens over all generation wall time (prefill and tool round trips included).
+Peak MLX is `Memory.peakMemory`; peak footprint is the process's `phys_footprint`.
+
+| Mac | Model | Download | Load (incl. download) | Tokens/s | Peak MLX | Peak footprint | Tool calls |
+|---|---|---|---|---|---|---|---|
+| M5 Pro, 24 GB (GPU budget 17.76 GB) | `qwen3_1_7b_4bit` | 0.91 GB | 126.8 s | 6.9 | 1.94 GB | 1.19 GB | 16/20 |
+| M5 Pro, 24 GB | Apple's model | n/a | n/a | n/a | n/a | n/a | not run: `unavailable(modelNotReady)` |
+
+Qwen3 1.7B misses: one malformed tool-call payload, a wrong task id, a duplicate call with
+opposite directions, and `move_task` instead of `set_task_status`. Still to do: Apple's model once
+it is ready, `qwen3_4b_4bit` and `qwen3_8b_4bit` here, and all candidates on an 8 GB and a 16 GB
+Mac (base M1 or M2); then fix the curated list and confirm or revise the 70% / 50% thresholds.
+
 ## Risks
 
 - **MLX needs macOS 27:** Tahoe users only get Apple's model (owner's decision,
