@@ -34,7 +34,7 @@ struct EligibilityTests {
 
     @Test func a24GBMacGetsEveryModelRecommended() {
         let m = mac(memoryGB: 24)
-        for model in ModelChoice.allCases { #expect(Eligibility.of(model, on: m) == .recommended) }
+        for model in ModelChoice.downloadable { #expect(Eligibility.of(model, on: m) == .recommended) }
     }
 
     @Test func baseM1AndM2WarnAboutSpeedForBalancedAndLargeButProChipsDoNot() {
@@ -51,7 +51,7 @@ struct EligibilityTests {
 
     @Test func anUnsupportedGPUFamilyBlocksEveryModel() {
         let m = mac(memoryGB: 64, gpuFamilyOK: false)
-        for model in ModelChoice.allCases { #expect(isBlocked(Eligibility.of(model, on: m))) }
+        for model in ModelChoice.downloadable { #expect(isBlocked(Eligibility.of(model, on: m))) }
     }
 
     @Test func lowDiskBlocksUntilTheDownloadPlusTwoGBFits() {

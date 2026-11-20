@@ -16,6 +16,8 @@ enum Eligibility: Equatable, Sendable {
     static let diskHeadroomBytes = 2 * 1_073_741_824
 
     static func of(_ model: ModelChoice, on mac: HardwareProfile) -> Eligibility {
+        // Apple's model runs outside our process and needs no download.
+        guard model.isDownloadable else { return .recommended }
         guard mac.supportsRequiredGPUFamily else {
             return .blocked("This Mac’s graphics chip is too old for on-device models.")
         }
@@ -42,3 +44,33 @@ enum Eligibility: Equatable, Sendable {
         String(format: "%.1f GB", Double(bytes) / 1_000_000_000)
     }
 }
+
+/// Why a model may not be downloaded or loaded right now; the text is shown to the user.
+enum ModelAccessError: LocalizedError, Equatable {
+    /// Hardware or disk rules out the model; there is no override.
+    case blocked(String)
+    /// Allowed, but the user must confirm first.
+    case needsConfirmation(String)
+    case notDownloaded
+    case unavailable(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .blocked(let reason), .unavailable(let reason): reason
+        case .needsConfirmation(let reason): reason
+        case .notDownloaded: "Download this model first."
+        }
+    }
+}
+
+extension Eligibility {
+    /// The gate in front of every download and load: blocked always refuses, tight refuses until confirmed.
+    func require(confirmed: Bool) throws(ModelAccessError) {
+        switch self {
+        case .recommended: return
+        case .blocked(let reason): throw .blocked(reason)
+        case .tight(let reason): if !confirmed { throw .needsConfirmation(reason) }
+        }
+    }
+}
+
