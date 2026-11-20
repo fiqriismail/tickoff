@@ -89,26 +89,33 @@ struct DailyGoalStore: Sendable {
         id: Int64, increment: Bool, date: Date = .now, calendar: Calendar = .current
     ) throws {
         try database.queue.write { db in
-            let goal = try Self.requireGoal(id, in: db)
-            let day = GoalDate.key(for: date, calendar: calendar)
-            try Self.snapshot(goal, day: day, in: db)
-            guard let row = try Row.fetchOne(
-                db, sql: "SELECT tracking, value FROM daily_goal_progress WHERE goal_id = ? AND day = ?",
-                arguments: [id, day])
-            else { throw GoalError.unavailable }
-            let value: Int = row["value"]
-            let tracking: String = row["tracking"]
-            let next: Int
-            if tracking == GoalTracking.checkOff.rawValue {
-                next = value == 0 ? 1 : 0
-            } else {
-                if increment && value == Int.max { throw GoalError.progressLimit }
-                next = increment ? value + 1 : max(0, value - 1)
-            }
-            try db.execute(
-                sql: "UPDATE daily_goal_progress SET value = ? WHERE goal_id = ? AND day = ?",
-                arguments: [next, id, day])
+            try Self.changeProgress(id: id, increment: increment, date: date, calendar: calendar, in: db)
         }
+    }
+
+    /// Runs inside the caller's transaction so `ChangeBatch` can combine it with task changes.
+    static func changeProgress(
+        id: Int64, increment: Bool, date: Date = .now, calendar: Calendar = .current, in db: Database
+    ) throws {
+        let goal = try requireGoal(id, in: db)
+        let day = GoalDate.key(for: date, calendar: calendar)
+        try snapshot(goal, day: day, in: db)
+        guard let row = try Row.fetchOne(
+            db, sql: "SELECT tracking, value FROM daily_goal_progress WHERE goal_id = ? AND day = ?",
+            arguments: [id, day])
+        else { throw GoalError.unavailable }
+        let value: Int = row["value"]
+        let tracking: String = row["tracking"]
+        let next: Int
+        if tracking == GoalTracking.checkOff.rawValue {
+            next = value == 0 ? 1 : 0
+        } else {
+            if increment && value == Int.max { throw GoalError.progressLimit }
+            next = increment ? value + 1 : max(0, value - 1)
+        }
+        try db.execute(
+            sql: "UPDATE daily_goal_progress SET value = ? WHERE goal_id = ? AND day = ?",
+            arguments: [next, id, day])
     }
 
     /// Project deletion hides definitions too, but historical snapshots stay intact.
