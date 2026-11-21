@@ -56,7 +56,7 @@ struct TaskListView<Accessory: View>: View {
             ProgressSummary.text(
                 done: tasks.count(.done, project: scope.projectID),
                 total: tasks.count(nil, project: scope.projectID)))
-        .searchable(text: $query, isPresented: $searchPresented, prompt: "Search")
+        .searchable(text: $query, isPresented: $searchPresented, placement: .toolbar, prompt: "Search tasks")
         .toolbar {
             ToolbarItem(placement: .primaryAction) { moreMenu }
         }
