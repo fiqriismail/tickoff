@@ -24,7 +24,7 @@ visible search results.
 ## Search titles and notes
 
 1. Choose a Tasks project or All Projects.
-2. Press **Command-F** (**View > Find Tasks**) or use the toolbar search field.
+2. Press **Command-F** (**View > Find Tasks**) or use the search field under the add-task bar. Press **Escape** to clear it.
 3. Type part of a task title or note.
 
 Search ignores letter case and spaces at the beginning or end of your query.

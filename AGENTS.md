@@ -189,9 +189,11 @@ done once per change:
 - Reusable visual pieces live next to the feature that uses them until a second feature
   needs them.
 - The window is a single `Window` scene with a unified toolbar, like System Settings: the
-  page title and subtitle (`navigationTitle` / `navigationSubtitle`) and the search field
-  live in the toolbar, and content starts directly beneath it. Use one 16pt content margin
-  and system control sizes; don't hide the title bar or add manual top padding.
+  page title and subtitle (`navigationTitle` / `navigationSubtitle`) live in the toolbar,
+  and content starts directly beneath it. The search field sits in the task list under the
+  add bar, not in the toolbar: a toolbar search field is pinned to the window's trailing edge
+  and would sit over the assistant panel. Use one 16pt content margin and system control
+  sizes; don't hide the title bar or add manual top padding.
 - Menu commands live in `AppCommands`; features only ever see `AppActions`.
 
 ## Testing
