@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The detail column: the toolbar (title, progress, More menu), a search field under it and a lazily
-/// built list of task rows. It holds no task data of its own; the shell's `TaskSet` is passed in.
+/// The detail column: the toolbar (title, progress, search, More menu) and a lazily built list of
+/// task rows. It holds no task data of its own; the shell's `TaskSet` is passed in.
 struct TaskListView<Accessory: View>: View {
     let tasks: TaskSet
     let filter: Filter
@@ -27,7 +27,7 @@ struct TaskListView<Accessory: View>: View {
 
     @State private var query = ""
     @State private var cache = VisibleCache()
-    @FocusState private var searchFocused: Bool
+    @State private var searchPresented = false
     @State private var confirmingClear = false
     @State private var selection: Task.ID?
 
@@ -42,9 +42,6 @@ struct TaskListView<Accessory: View>: View {
             accessory()
                 .padding(.horizontal, Self.margin)
                 .padding(.vertical, 12)
-            searchField
-                .padding(.horizontal, Self.margin)
-                .padding(.bottom, 12)
             if visible.isEmpty {
                 // Fills the rest so the add bar stays pinned under the toolbar.
                 emptyState.frame(maxHeight: .infinity)
@@ -53,13 +50,13 @@ struct TaskListView<Accessory: View>: View {
             }
         }
         .frame(maxHeight: .infinity, alignment: .top)
-        // Title, progress and More live in the window toolbar, like System Settings. Search stays in the
-        // list: a toolbar search field is pinned to the window's trailing edge, over the assistant panel.
+        // Title, progress, search and More live in the window toolbar, like System Settings.
         .navigationTitle(scopedProject?.name ?? filter.label)
         .navigationSubtitle(
             ProgressSummary.text(
                 done: tasks.count(.done, project: scope.projectID),
                 total: tasks.count(nil, project: scope.projectID)))
+        .searchable(text: $query, isPresented: $searchPresented, placement: .toolbar, prompt: "Search tasks")
         .toolbar {
             ToolbarItem(placement: .primaryAction) { moreMenu }
         }
@@ -73,24 +70,8 @@ struct TaskListView<Accessory: View>: View {
         } message: {
             Text("They will be deleted permanently.")
         }
-        .onChange(of: searchRequest) { searchFocused = true }
+        .onChange(of: searchRequest) { searchPresented = true }
         .onChange(of: clearRequest) { if doneCount > 0 { confirmingClear = true } }
-    }
-
-    private var searchField: some View {
-        TextField("Search", text: $query)
-            .textFieldStyle(.roundedBorder)
-            .focused($searchFocused)
-            .onExitCommand { query = ""; searchFocused = false }
-            .overlay(alignment: .trailing) {
-                if searching {
-                    Button { query = "" } label: { Label("Clear Search", systemImage: "xmark.circle.fill") }
-                        .labelStyle(.iconOnly)
-                        .buttonStyle(.borderless)
-                        .foregroundStyle(.secondary)
-                        .padding(.trailing, 6)
-                }
-            }
     }
 
     private var doneCount: Int { tasks.count(.done, project: scope.projectID) }
