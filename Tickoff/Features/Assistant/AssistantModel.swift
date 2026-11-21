@@ -172,7 +172,9 @@ final class AssistantModel {
     private static func isContextFull(_ error: any Error) -> Bool {
         if case LanguageModelSession.GenerationError.exceededContextWindowSize = error { return true }
         if #available(macOS 27.0, *), case LanguageModelError.contextSizeExceeded = error { return true }
-        return false
+        // Apple's on-device model reports an oversized prompt with a private `GenerativeError` ("Provided N
+        // tokens, but the maximum allowed is 8,192"), which only the message can identify.
+        return error.localizedDescription.localizedCaseInsensitiveContains("maximum allowed")
     }
 
     // MARK: Proposals

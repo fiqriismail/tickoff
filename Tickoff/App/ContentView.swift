@@ -62,16 +62,16 @@ struct ContentView: View {
                     ErrorBanner(message: message, dismiss: model.dismissError)
                 }
             }
-        }
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button { showsAssistant.toggle() } label: { Label("Assistant", systemImage: "sparkles") }
-                    .help(showsAssistant ? "Hide the assistant" : "Show the assistant")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button { showsAssistant.toggle() } label: { Label("Assistant", systemImage: "sparkles") }
+                        .help(showsAssistant ? "Hide the assistant" : "Show the assistant")
+                }
             }
-        }
-        .inspector(isPresented: $showsAssistant) {
-            AssistantView(model: model.assistant)
-                .inspectorColumnWidth(min: 280, ideal: 340, max: 480)
+            .inspector(isPresented: $showsAssistant) {
+                AssistantView(model: model.assistant)
+                    .inspectorColumnWidth(min: 280, ideal: 340, max: 480)
+            }
         }
         .sheet(item: $editing) { task in
             EditTaskView(
