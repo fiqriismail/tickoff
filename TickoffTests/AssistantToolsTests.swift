@@ -48,6 +48,40 @@ struct AssistantToolsTests {
                 today: today, calendar: calendar))
     }
 
+    // MARK: Bulk status
+
+    @Test func closingTasksByTitlePrefixOnlyTouchesTheNamedProjectAndSkipsDoneOnes() async throws {
+        let w = workspace(extraTasks: [
+            task(10, "Test one"), task(11, "test two"), task(12, "Test three", project: 2),
+            task(13, "Test four", status: .done), task(14, "Retest it"),
+        ])
+        let tool = SetStatusForMatchingTool(workspace: w)
+        let reply = try await tool.call(arguments: .init(titleStartsWith: "Test", status: .done, project: "inbox"))
+        #expect(reply.contains("#1:") && reply.contains("#2:") && !reply.contains("#3"))
+        #expect(w.proposals.map(\.change) == [.setStatus(taskID: 10, .done), .setStatus(taskID: 11, .done)])
+    }
+
+    @Test func theConversationsProjectIsTheDefaultScopeAndAllOverridesIt() async throws {
+        let w = workspace(extraTasks: [task(10, "Test one"), task(12, "Test three", project: 2)])
+        w.focusProject = "Inbox"
+        let tool = SetStatusForMatchingTool(workspace: w)
+        _ = try await tool.call(arguments: .init(titleStartsWith: "Test", status: .done))
+        #expect(w.proposals.map(\.change) == [.setStatus(taskID: 10, .done)])
+        _ = try await tool.call(arguments: .init(titleStartsWith: "Test", status: .done, project: "all"))
+        #expect(w.proposals.count == 3)
+    }
+
+    @Test func closingTasksWithoutAProjectSpansEveryProjectAndNoMatchIsAnError() async throws {
+        let w = workspace(extraTasks: [task(10, "Test one"), task(12, "Test three", project: 2)])
+        let tool = SetStatusForMatchingTool(workspace: w)
+        _ = try await tool.call(arguments: .init(titleStartsWith: "Test", status: .done))
+        #expect(w.proposals.count == 2)
+        let none = try await tool.call(arguments: .init(titleStartsWith: "Zzz", status: .done))
+        #expect(none.hasPrefix("Error:") && w.proposals.count == 2)
+        let unknown = try await tool.call(arguments: .init(titleStartsWith: "Test", status: .done, project: "Nope"))
+        #expect(unknown.hasPrefix("Error:"))
+    }
+
     // MARK: Read tools
 
     @Test func searchFiltersByTextStatusProjectAndDueDate() async throws {
@@ -91,9 +125,9 @@ struct AssistantToolsTests {
 
     @Test func listProjectsAndTodaysGoalsSummariseTheSnapshot() async throws {
         let w = workspace()
-        let projects = try await ListProjectsTool(workspace: w).call(arguments: NoArguments())
+        let projects = try await ListProjectsTool(workspace: w).call(arguments: NameFilterArguments(name: nil))
         #expect(projects.contains("Work (id 2, 2 open tasks)") && projects.contains("Health (id 9, daily goals)"))
-        let goals = try await TodaysGoalsTool(workspace: w).call(arguments: NoArguments())
+        let goals = try await TodaysGoalsTool(workspace: w).call(arguments: NameFilterArguments(name: nil))
         #expect(goals.contains("Meditate: not done today") && goals.contains("Drink water: 3 of 8 today"))
     }
 

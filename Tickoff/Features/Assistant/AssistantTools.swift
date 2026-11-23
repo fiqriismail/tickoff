@@ -33,7 +33,11 @@ import FoundationModels
 
 @Generable enum GoalDirection { case up, down }
 
-@Generable struct NoArguments {}
+/// Small models don't call a tool whose arguments are empty (they print its name as the answer), so the
+/// list tools take an optional name filter.
+@Generable struct NameFilterArguments {
+    @Guide(description: "Part of the name to look for; omit to list everything") var name: String?
+}
 
 // MARK: - Read tools
 
@@ -96,9 +100,9 @@ struct ListProjectsTool: FoundationModels.Tool {
     let name = "list_projects"
     let description = "List the projects with their ids, kinds and open task counts."
 
-    func call(arguments: NoArguments) async throws -> String {
+    func call(arguments: NameFilterArguments) async throws -> String {
         workspace.read { snapshot throws(ToolRefusal) in
-            snapshot.projects.map { project in
+            snapshot.projects.filter { Self.matches($0.name, arguments.name) }.map { project in
                 if project.kind == .dailyGoals { return "\(project.name) (id \(project.id), daily goals)" }
                 let open = snapshot.tasks.count(.todo, project: project.id)
                     + snapshot.tasks.count(.inProgress, project: project.id)
@@ -113,15 +117,23 @@ struct TodaysGoalsTool: FoundationModels.Tool {
     let name = "todays_goals"
     let description = "List today's daily goals with their progress."
 
-    func call(arguments: NoArguments) async throws -> String {
+    func call(arguments: NameFilterArguments) async throws -> String {
         workspace.read { snapshot throws(ToolRefusal) in
             if snapshot.goals.isEmpty { return "There are no daily goals." }
-            return snapshot.goals.map { goal in
+            return snapshot.goals.filter { Self.matches($0.name, arguments.name) }.map { goal in
                 goal.tracking == .checkOff
                     ? "\(goal.name): \(goal.value > 0 ? "done" : "not done") today"
                     : "\(goal.name): \(goal.value) of \(goal.target) today"
             }.joined(separator: "\n")
         }
+    }
+}
+
+private extension FoundationModels.Tool {
+    /// A missing or blank filter matches everything; otherwise a case-insensitive substring.
+    static func matches(_ name: String, _ filter: String?) -> Bool {
+        guard let filter = filter?.trimmingCharacters(in: .whitespacesAndNewlines), !filter.isEmpty else { return true }
+        return name.localizedCaseInsensitiveContains(filter)
     }
 }
 
@@ -209,6 +221,44 @@ struct SetTaskStatusTool: FoundationModels.Tool {
     }
 }
 
+@Generable struct SetStatusForMatchingArguments {
+    @Guide(description: "Tasks whose title starts with this text") var titleStartsWith: String
+    @Guide(description: "The new status") var status: StatusChoice
+    @Guide(description: "Only this project's tasks; omit to use the project the conversation is about, or pass \"all\" for every project") var project: String?
+}
+
+struct SetStatusForMatchingTool: FoundationModels.Tool {
+    let workspace: AssistantWorkspace
+    let name = "set_status_for_matching_tasks"
+    let description = "Propose a new status for every task whose title starts with some text, optionally within one project. Use it for requests like \"close the tasks that start with Test\". Not changed until the user approves."
+
+    func call(arguments a: SetStatusForMatchingArguments) async throws -> String {
+        // Read outside the closure: it runs under the workspace's lock.
+        let focus = workspace.focusProject
+        return workspace.proposeMany { snapshot throws(ToolRefusal) in
+            let prefix = a.titleStartsWith.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !prefix.isEmpty else { throw ToolRefusal("Say what the titles start with.") }
+            var scope: Int64?
+            let named = a.project?.trimmingCharacters(in: .whitespaces) ?? ""
+            let wanted = named.isEmpty ? focus : named
+            if let wanted, !["all", "any", "every"].contains(wanted.lowercased()) {
+                scope = try Resolve.project(wanted, in: snapshot).id
+            }
+            let target = a.status.status
+            let matching = snapshot.tasks.items.filter { task in
+                task.title.range(of: prefix, options: [.anchored, .caseInsensitive, .diacriticInsensitive]) != nil
+                    && (scope == nil || task.projectID == scope) && task.status != target
+            }
+            guard !matching.isEmpty else {
+                throw ToolRefusal("No task starting with “\(prefix)” needs to change to \(target.label).")
+            }
+            return matching.prefix(AssistantWorkspace.maxResults).map {
+                (.setStatus(taskID: $0.id, target), "Mark “\($0.title)” as \(target.label)")
+            }
+        }
+    }
+}
+
 @Generable struct MoveTaskArguments {
     @Guide(description: "The task's id") var id: Int
     @Guide(description: "Name of the destination project") var project: String
@@ -287,7 +337,8 @@ enum AssistantTools {
             SearchTasksTool(workspace: workspace), GetTaskTool(workspace: workspace),
             ListProjectsTool(workspace: workspace), TodaysGoalsTool(workspace: workspace),
             CreateTaskTool(workspace: workspace), UpdateTaskTool(workspace: workspace),
-            SetTaskStatusTool(workspace: workspace), MoveTaskTool(workspace: workspace),
+            SetTaskStatusTool(workspace: workspace), SetStatusForMatchingTool(workspace: workspace),
+            MoveTaskTool(workspace: workspace),
             DeleteTaskTool(workspace: workspace), ChangeGoalProgressTool(workspace: workspace),
         ]
     }

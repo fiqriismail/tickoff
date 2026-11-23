@@ -78,6 +78,12 @@ final class AssistantModel {
         let prompt = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !prompt.isEmpty, !isBusy else { return }
         notice = nil
+        // A fresh session per message: small models copy the tool calls in their own history (a question
+        // after "create a task" came back as another create). Earlier turns carry over as short text.
+        if !messages.isEmpty {
+            carriedSummary = summaryOfConversation(excluding: nil)
+            session = nil
+        }
         messages.append(Message(role: .user, text: prompt))
         let reply = Message(role: .assistant, text: "")
         messages.append(reply)
@@ -103,13 +109,27 @@ final class AssistantModel {
 
     private func run(_ prompt: String, replyID: UUID, retried: Bool = false) async {
         workspace.update(snapshot())
+        workspace.focusProject = focusProject()
         do {
             let session = try await currentSession()
             status = .responding
-            try await provider.generate(with: choice) {
-                for try await partial in session.streamResponse(to: prompt) {
-                    setText(partial.content, of: replyID)
+            var next = prompt
+            for attempt in 0..<2 {
+                let toolCalls = Self.toolCallCount(in: session)
+                let proposed = workspace.proposals.count
+                try await provider.generate(with: choice) {
+                    for try await partial in session.streamResponse(to: next) {
+                        setText(partial.content, of: replyID)
+                    }
                 }
+                // Small models sometimes promise an action ("I've proposed …", "Let me look that up") without
+                // calling a tool. Ask once for the real call.
+                let reply = text(of: replyID)
+                let announcedWithoutTool = Self.toolCallCount(in: session) == toolCalls && Self.promisesAction(reply)
+                let claimedWithoutProposal = workspace.proposals.count == proposed && Self.claimsProposal(reply)
+                guard attempt == 0, !_Concurrency.Task.isCancelled, announcedWithoutTool || claimedWithoutProposal
+                else { break }
+                next = Self.correction
             }
             // A cancelled stream may simply end instead of throwing.
             if _Concurrency.Task.isCancelled {
@@ -143,12 +163,25 @@ final class AssistantModel {
     private func currentSession() async throws -> LanguageModelSession {
         if let session { return session }
         var instructions = AssistantWorkspace.instructions(for: workspace.snapshot)
+        if let focus = focusProject() {
+            instructions += "\nThe conversation is about the project \"\(focus)\". Unless the user names another project or says all, pass it as the project argument when searching or changing tasks."
+        }
         if let carriedSummary {
-            instructions += "\nThe earlier conversation was long, so it was cleared. Where it left off:\n\(carriedSummary)"
+            instructions += "\nThe conversation so far. Use it for what \"they\", \"those\" or \"that project\" refer to, and answer only the latest message:\n\(carriedSummary)"
         }
         let created = try await makeSession(choice, AssistantTools.all(workspace), instructions)
         session = created
         return created
+    }
+
+    /// The project the user last named, longest name first, so "Test Project" wins over "Test". Found in code
+    /// because small models don't carry "the Inbox project" over into a tool's project argument.
+    private func focusProject() -> String? {
+        let names = workspace.snapshot.taskProjects.map(\.name).sorted { $0.count > $1.count }
+        for message in messages.reversed() where message.role == .user {
+            if let name = names.first(where: { message.text.localizedCaseInsensitiveContains($0) }) { return name }
+        }
+        return nil
     }
 
     private func finishStopped(_ id: UUID) {
@@ -162,11 +195,36 @@ final class AssistantModel {
         if let index = messages.firstIndex(where: { $0.id == id }) { messages[index].text = text }
     }
 
-    /// The last few turns, shortened, for the next session. No model call: it must work when the context is full.
-    private func summaryOfConversation(excluding id: UUID) -> String {
-        messages.filter { $0.id != id && !$0.text.isEmpty }.suffix(6).map {
-            "\($0.role == .user ? "User" : "Assistant"): \(String($0.text.prefix(200)))"
+    /// The last few turns, shortened, for the next session, so "those tasks" or "that project" still has a
+    /// meaning. A proposal reply is reduced to a plain note: small models copy the "I've proposed #1: …" wording
+    /// instead of answering the new message. No model call, so it works when the context is full.
+    private func summaryOfConversation(excluding id: UUID?) -> String {
+        messages.filter { $0.id != id && !$0.text.isEmpty }.suffix(6).map { message in
+            switch message.role {
+            case .user: "User: \(String(message.text.prefix(200)))"
+            case .assistant:
+                message.text.localizedCaseInsensitiveContains("propos")
+                    ? "Tickoff: (a change was put forward for the user to approve)"
+                    : "Tickoff: \(String(message.text.prefix(200)))"
+            }
         }.joined(separator: "\n")
+    }
+
+    private static let correction = """
+        No tool was called, so nothing has happened yet. Call the tool that fits the user's latest \
+        message (a lookup tool for a question, a propose tool for a change), then answer from its reply.
+        """
+
+    private static func toolCallCount(in session: LanguageModelSession) -> Int {
+        session.transcript.filter { if case .toolCalls = $0 { true } else { false } }.count
+    }
+
+    private static func claimsProposal(_ reply: String) -> Bool {
+        reply.localizedCaseInsensitiveContains("proposed")
+    }
+
+    private static func promisesAction(_ reply: String) -> Bool {
+        ["propos", "let me", "i'll", "i’ll", "i will"].contains { reply.localizedCaseInsensitiveContains($0) }
     }
 
     private static func isContextFull(_ error: any Error) -> Bool {
@@ -239,7 +297,16 @@ final class AssistantModel {
     func cancelDownload() { provider.cancelDownload() }
 
     private func startDownload(_ model: ModelChoice, confirmed: Bool) {
+        availability[model] = .downloading(0)
         _Concurrency.Task {
+            // The provider's status is only read on request, so poll it for the picker's progress while it runs.
+            let progress = _Concurrency.Task {
+                while !_Concurrency.Task.isCancelled {
+                    try? await _Concurrency.Task.sleep(for: .milliseconds(500))
+                    if provider.downloading == model { availability[model] = .downloading(provider.downloadFraction(of: model) ?? 0) }
+                }
+            }
+            defer { progress.cancel() }
             do {
                 try await provider.download(model, confirmTight: confirmed)
             } catch is CancellationError {
