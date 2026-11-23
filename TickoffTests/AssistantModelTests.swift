@@ -6,6 +6,7 @@ import Testing
 
 @MainActor
 struct AssistantModelTests {
+    private final class Reports2 { var instructions: [String] = [] }
     private final class Reports { var outcomes: [Outcome] = []; var savedKeys: [String] = [] }
 
     private struct Fixture {
@@ -19,7 +20,8 @@ struct AssistantModelTests {
 
     private func fixture(
         toolName: String = "set_task_status", arguments: String? = nil, delay: Duration = .zero,
-        storedKey: String? = nil, macOS27: Bool = true, factory: AssistantModel.SessionFactory? = nil
+        storedKey: String? = nil, macOS27: Bool = true, claimsWithoutTool: Bool = false,
+        factory: AssistantModel.SessionFactory? = nil
     ) throws -> Fixture {
         let database = try AppDatabase()
         let tasks = TaskStore(database: database)
@@ -45,7 +47,8 @@ struct AssistantModelTests {
             makeSession: factory ?? { _, tools, instructions in
                 guard #available(macOS 27.0, *) else { throw ModelAccessError.unavailable("needs 27") }
                 let scripted = ScriptedLanguageModel(
-                    toolName: toolName, arguments: args, reply: "I’ve proposed that.", delay: delay)
+                    toolName: toolName, arguments: args, reply: "I’ve proposed that.", delay: delay,
+                    claimsWithoutTool: claimsWithoutTool)
                 return LanguageModelSession(model: scripted, tools: tools, instructions: instructions)
             })
         return Fixture(database: database, tasks: tasks, projects: projects, reports: reports, model: model, first: first)
@@ -69,6 +72,36 @@ struct AssistantModelTests {
         #expect(f.model.proposals.map(\.summary) == ["Mark “Buy groceries” as Done"])
         #expect(try f.tasks.loadAll().first { $0.id == f.first }?.status == .todo)
         #expect(f.reports.outcomes.isEmpty)
+    }
+
+    @Test func aClaimedProposalWithoutAToolCallIsCorrectedOnceSoTheProposalExists() async throws {
+        guard #available(macOS 27.0, *) else { return }
+        let f = try fixture(claimsWithoutTool: true)
+        f.model.send("Mark the groceries as done")
+        await waitUntilIdle(f.model)
+        #expect(f.model.status == .idle)
+        #expect(f.model.proposals.map(\.summary) == ["Mark “Buy groceries” as Done"])
+        #expect(f.model.messages.count == 2)
+    }
+
+    @Test func eachMessageStartsAFreshSessionThatCarriesTheConversationButNotProposalWording() async throws {
+        guard #available(macOS 27.0, *) else { return }
+        let seen = Reports2()
+        let f = try fixture(factory: { _, tools, instructions in
+            seen.instructions.append(instructions)
+            let scripted = ScriptedLanguageModel(
+                toolName: "set_task_status", arguments: #"{"id": 1, "status": "done"}"#, reply: "I’ve proposed that.")
+            return LanguageModelSession(model: scripted, tools: tools, instructions: instructions)
+        })
+        f.model.send("Close the groceries task")
+        await waitUntilIdle(f.model)
+        f.model.send("How many tasks are in the inbox?")
+        await waitUntilIdle(f.model)
+        #expect(seen.instructions.count == 2)
+        #expect(!seen.instructions[0].contains("The conversation so far"))
+        #expect(seen.instructions[1].contains("User: Close the groceries task"))
+        #expect(seen.instructions[1].contains("Tickoff: (a change was put forward for the user to approve)"))
+        #expect(!seen.instructions[1].contains("I’ve proposed that."))
     }
 
     @Test func applyingAProposalWritesItThroughTheBatchAndReportsChanged() async throws {

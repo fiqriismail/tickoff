@@ -14,10 +14,13 @@ struct ScriptedLanguageModel: LanguageModel {
     var arguments: String
     var reply: String
     var delay: Duration = .zero
+    /// Answers the first prompt with a claim of having proposed something, without calling the tool.
+    var claimsWithoutTool = false
 
     var capabilities: LanguageModelCapabilities { LanguageModelCapabilities([.toolCalling]) }
     var executorConfiguration: ScriptedExecutor.Configuration {
-        .init(toolName: toolName, arguments: arguments, reply: reply, delay: delay)
+        .init(
+            toolName: toolName, arguments: arguments, reply: reply, delay: delay, claimsWithoutTool: claimsWithoutTool)
     }
 }
 
@@ -30,6 +33,7 @@ struct ScriptedExecutor: LanguageModelExecutor {
         var arguments: String
         var reply: String
         var delay: Duration
+        var claimsWithoutTool: Bool
     }
 
     let configuration: Configuration
@@ -43,6 +47,11 @@ struct ScriptedExecutor: LanguageModelExecutor {
         streamingInto channel: LanguageModelExecutorGenerationChannel
     ) async throws {
         try await _Concurrency.Task.sleep(for: configuration.delay)
+        let prompts = request.transcript.filter { if case .prompt = $0 { true } else { false } }.count
+        if configuration.claimsWithoutTool, prompts == 1 {
+            await channel.send(.response(action: .appendText("I’ve proposed that.", tokenCount: 1)))
+            return
+        }
         let toolHasRun: Bool
         if case .toolOutput? = request.transcript.last { toolHasRun = true } else { toolHasRun = false }
         if toolHasRun {

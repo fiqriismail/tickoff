@@ -53,6 +53,7 @@ final class AssistantWorkspace: Sendable {
         var snapshot: AssistantSnapshot
         var proposals: [Proposal] = []
         var nextID = 1
+        var focusProject: String?
     }
 
     private let state: Mutex<State>
@@ -63,6 +64,12 @@ final class AssistantWorkspace: Sendable {
 
     var snapshot: AssistantSnapshot { state.withLock { $0.snapshot } }
     var proposals: [Proposal] { state.withLock { $0.proposals } }
+
+    /// The project the conversation is about; tools that take an optional project fall back to it.
+    var focusProject: String? {
+        get { state.withLock { $0.focusProject } }
+        set { state.withLock { $0.focusProject = newValue } }
+    }
 
     /// Refreshes what the tools see (data changed, or a day passed); recorded proposals stay.
     func update(_ snapshot: AssistantSnapshot) {
@@ -98,6 +105,27 @@ final class AssistantWorkspace: Sendable {
         }
     }
 
+    /// Like `propose`, for a change that touches several tasks: one proposal per task, all or nothing.
+    func proposeMany(
+        _ make: (AssistantSnapshot) throws(ToolRefusal) -> [(change: ProposedChange, summary: String)]
+    ) -> String {
+        state.withLock { state in
+            do throws(ToolRefusal) {
+                let made = try make(state.snapshot)
+                var ids: [Int] = []
+                for item in made {
+                    state.proposals.append(Proposal(id: state.nextID, change: item.change, summary: item.summary))
+                    ids.append(state.nextID)
+                    state.nextID += 1
+                }
+                let lines = zip(ids, made).map { "Proposed #\($0): \($1.summary)" }.joined(separator: "\n")
+                return Self.capped(lines + "\nThe user must approve these before anything changes.")
+            } catch {
+                return "Error: \(error.message)"
+            }
+        }
+    }
+
     private static func capped(_ text: String) -> String {
         guard text.count > maxCharacters else { return text }
         return String(text.prefix(maxCharacters)) + "\n…(reply shortened)"
@@ -111,12 +139,22 @@ final class AssistantWorkspace: Sendable {
         let goals = snapshot.goals.prefix(30).map(\.name).joined(separator: ", ")
         return """
             You help the user manage their tasks in Tickoff. Today is \(weekday) \(day).
-            Use the tools to look things up and to propose changes. Nothing changes until the user \
-            approves a proposal, so say "I've proposed …", never "done". Never invent ids: find a task's \
+            Use the tools to look things up and to propose changes. Propose a change only when the \
+            user asks for one in their latest message. A question (how many, which, what is due) \
+            gets an answer in words, never a proposal: call search_tasks or list_projects right away \
+            (do not say "I'll check" or "let me look"; call the tool instead) and answer from what it \
+            returns. Nothing \
+            changes until the user approves a proposal, so say "I've proposed …", never "done". Never invent ids: find a task's \
             id with search_tasks or get_task first, searching for a few words of its title (not its \
-            status). To change a task, call the matching propose tool; only say you proposed something \
+            status). To change a task, call the matching propose tool once for each task (several tasks \
+            means several calls); only say you proposed something \
             after a tool replied "Proposed #n". If a tool replies with an error, fix the arguments \
             and try again, or ask the user.
+            "Close", "finish" or "complete" tasks means status done: for tasks picked by the start of their \
+            title ("the tasks that start with Test") call set_status_for_matching_tasks once, passing the \
+            project the user named (use the earlier conversation to know which); otherwise set_task_status; only propose \
+            delete_task when the user says delete or remove. When the user names a project, search only \
+            that project (the project argument of search_tasks).
             Statuses: todo, inProgress, done. Priorities: low, medium, high. Dates are YYYY-MM-DD.
             Task projects: \(projects.isEmpty ? "none" : projects).
             Daily goals today: \(goals.isEmpty ? "none" : goals).
